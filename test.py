@@ -67,4 +67,4 @@ class NarcolepticSuperhero(object):
 
 if __name__ == "__main__":
     hero = NarcolepticSuperhero("testing")
-    hero.get_graph().draw('state.png', prog='dot')
+    hero.get_graph().draw('state.svg', prog='dot')
