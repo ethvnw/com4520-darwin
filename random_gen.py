@@ -23,6 +23,7 @@ class RandomGenerator:
         
         self._try_generate_connected_machine()
         print(f"Machine with {len(self.states)} states and {len(self.events)} events created.")
+        self.get_equivalent_states()
 
     
     def _try_generate_connected_machine(self) -> None:
@@ -52,7 +53,7 @@ class RandomGenerator:
                 dest = random.choice(self.states)
         
                 transitions.append({
-                    'trigger': event,
+                    'trigger': event + ' / ' + str(random.randint(0, 1)),
                     'source': state,
                     'dest': dest
                 })
@@ -93,14 +94,14 @@ class RandomGenerator:
         Add any transitions that are missing for an event to make the machine complete.
         """
         for state in self.states:
-            current_triggers = self.machine.get_triggers(state)
+            current_triggers = [trigger[0] for trigger in self.machine.get_triggers(state) ]
             available_triggers = [event for event in self.events if event not in current_triggers]
 
             for trigger in available_triggers:
                 dest = random.choice(self.states)
 
                 self.machine.add_transition(
-                    trigger=trigger,
+                    trigger=trigger + ' / ' + str(random.randint(0, 1)),
                     source=state,
                     dest=dest
                 )
@@ -119,20 +120,36 @@ class RandomGenerator:
                     continue
 
                 if not self._is_reachable_from(state, target):
-                    current_triggers = self.machine.get_triggers(state)
+                    current_triggers = [trigger[0] for trigger in self.machine.get_triggers(state) ]
                     available_triggers = [event for event in self.events if event not in current_triggers]
 
                     if not available_triggers:
                         return False
 
                     self.machine.add_transition(
-                        trigger=available_triggers[0],
+                        trigger=available_triggers[0] + ' / ' + str(random.randint(0, 1)),
                         source=state,
                         dest=target
                     )
 
         self._add_leftover_transitions()
         return True
+    
+
+    def get_equivalent_states(self) -> None:
+        for state1 in self.states:
+            for state2 in self.states:
+                if state1 == state2:
+                    continue
+
+                state1_transitions = self.machine.get_triggers(state1)
+                state2_transitions = self.machine.get_triggers(state2)
+
+                if state1_transitions == state2_transitions:
+                    print(f"States {state1} and {state2} are equivalent.")
+                    print(f"State {state1} transitions: {state1_transitions}")
+                    print(f"State {state2} transitions: {state2_transitions}")
+
 
         
 if __name__ == '__main__':

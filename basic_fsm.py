@@ -10,7 +10,9 @@ class Basic_FSM(object):
         self.name = name
         self.machine = Machine(model=self, states=Basic_FSM.states, initial='S0')
 
+        self.machine.add_transition(trigger='b / 0', source='S0', dest='S0')
         self.machine.add_transition(trigger='a / 0', source='S0', dest='S1')
+        self.machine.add_transition(trigger='a / 1', source='S1', dest='S1')
         self.machine.add_transition(trigger='b / 1', source='S1', dest='S2')
         self.machine.add_transition(trigger='b / 1', source='S2', dest='S0')
         self.machine.add_transition(trigger='a / 0', source='S2', dest='S1')
