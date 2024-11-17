@@ -10,32 +10,56 @@ class RandomGenerator:
                 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     
     MAX_NUM_STATES = 5
-    MAX_ALPHABET_LENGTH = 4
+    MAX_ALPHABET_LENGTH = 3
     
     def __init__(self) -> None:
-        self.states = [f'S{i}' for i in range(random.randint(
-            3, 
-            RandomGenerator.MAX_NUM_STATES))]
+        # self.states = [f'S{i}' for i in range(random.randint(
+        #     3, 
+        #     RandomGenerator.MAX_NUM_STATES))]
         
-        self.events = [RandomGenerator.ALPHABET[i] for i in range(random.randint(
-            2, 
-            RandomGenerator.MAX_ALPHABET_LENGTH))]
+        # self.events = [RandomGenerator.ALPHABET[i] for i in range(random.randint(
+        #     2, 
+        #     RandomGenerator.MAX_ALPHABET_LENGTH))]
+        self.states = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+        self.events = ['0', '1']
         
         self._try_generate_connected_machine()
         print(f"Machine with {len(self.states)} states and {len(self.events)} events created.")
-        self.get_equivalent_states()
 
     
     def _try_generate_connected_machine(self) -> None:
-        connected = False
+        """
+        Try to generate a connected machine. If the machine is not connected, try again.
+        """
+        # connected = False
 
-        while not connected:
-            self.transitions = self._generate_transitions()        
-            self.machine = Machine(states=self.states, 
-                                    initial=self.states[0], graph_engine='pygraphviz', 
-                                    auto_transitions=False, transitions=self.transitions)
+        # while not connected:
+        #     self.transitions = self._generate_transitions()        
+        #     connected = self._ensure_connected_machine()
 
-            connected = self._ensure_connected_machine()
+        # self._add_leftover_transitions()
+        self.transitions = [
+            {'trigger': '0 / 0', 'source': 'A', 'dest': 'F'}, 
+            {'trigger': '0 / 0', 'source': 'B', 'dest': 'G'}, 
+            {'trigger': '0 / 0', 'source': 'C', 'dest': 'B'}, 
+            {'trigger': '0 / 0', 'source': 'D', 'dest': 'C'},
+            {'trigger': '0 / 0', 'source': 'E', 'dest': 'D'},
+            {'trigger': '0 / 1', 'source': 'F', 'dest': 'E'},
+            {'trigger': '0 / 1', 'source': 'G', 'dest': 'E'},
+            {'trigger': '1 / 1', 'source': 'A', 'dest': 'B'},
+            {'trigger': '1 / 1', 'source': 'B', 'dest': 'A'},
+            {'trigger': '1 / 1', 'source': 'C', 'dest': 'C'},
+            {'trigger': '1 / 1', 'source': 'D', 'dest': 'B'},
+            {'trigger': '1 / 1', 'source': 'E', 'dest': 'A'},
+            {'trigger': '1 / 1', 'source': 'F', 'dest': 'F'},
+            {'trigger': '1 / 1', 'source': 'G', 'dest': 'G'}
+        ]
+           
+        self._make_minimal()
+        self._cleanup_transitions()
+        self.machine = Machine(states=self.states, initial=self.states[0], 
+                               graph_engine='pygraphviz', auto_transitions=False, 
+                               transitions=self.transitions)
 
 
     def _generate_transitions(self) -> list:
@@ -89,22 +113,41 @@ class RandomGenerator:
         return False
     
 
+    def _get_triggers(self, state: str) -> list:
+        """
+        Get triggers for a given state.
+
+        Args:
+            state (str): The state to get triggers for.
+
+        Returns:
+            list: A list of triggers for the given state.
+        """
+        triggers = []
+
+        for transition in self.transitions:
+            if transition['source'] == state:
+                triggers.append(transition['trigger'])
+
+        return triggers
+    
+
     def _add_leftover_transitions(self) -> None:
         """
         Add any transitions that are missing for an event to make the machine complete.
         """
         for state in self.states:
-            current_triggers = [trigger[0] for trigger in self.machine.get_triggers(state) ]
+            current_triggers = [trigger[0] for trigger in self._get_triggers(state)]
             available_triggers = [event for event in self.events if event not in current_triggers]
 
             for trigger in available_triggers:
                 dest = random.choice(self.states)
 
-                self.machine.add_transition(
-                    trigger=trigger + ' / ' + str(random.randint(0, 1)),
-                    source=state,
-                    dest=dest
-                )
+                self.transitions.append({
+                    'trigger': trigger + ' / ' + str(random.randint(0, 1)),
+                    'source': state,
+                    'dest': dest
+                })
         
 
     def _ensure_connected_machine(self) -> bool:
@@ -120,37 +163,166 @@ class RandomGenerator:
                     continue
 
                 if not self._is_reachable_from(state, target):
-                    current_triggers = [trigger[0] for trigger in self.machine.get_triggers(state) ]
+                    current_triggers = [trigger[0] for trigger in self._get_triggers(state)]
                     available_triggers = [event for event in self.events if event not in current_triggers]
 
                     if not available_triggers:
                         return False
+                    
+                    self.transitions.append({
+                        'trigger': available_triggers[0] + ' / ' + str(random.randint(0, 1)),
+                        'source': state,
+                        'dest': target
+                    })
 
-                    self.machine.add_transition(
-                        trigger=available_triggers[0] + ' / ' + str(random.randint(0, 1)),
-                        source=state,
-                        dest=target
-                    )
-
-        self._add_leftover_transitions()
         return True
     
 
-    def get_equivalent_states(self) -> None:
-        for state1 in self.states:
-            for state2 in self.states:
-                if state1 == state2:
-                    continue
+    def _find_1_equivalent(self) -> dict[str, set]:
+        """
+        Find the states that are equivalent with respect to their input/output.
 
-                state1_transitions = self.machine.get_triggers(state1)
-                state2_transitions = self.machine.get_triggers(state2)
+        Returns:
+            dict: A dictionary of equivalence sets.
+        """
+        equivalence_sets = dict()
 
-                if state1_transitions == state2_transitions:
-                    print(f"States {state1} and {state2} are equivalent.")
-                    print(f"State {state1} transitions: {state1_transitions}")
-                    print(f"State {state2} transitions: {state2_transitions}")
+        for state in self.states:
+            triggers = self._get_triggers(state)
+
+            io_string = ""
+            for trigger in triggers:
+                io_string += trigger
 
 
+            if io_string not in equivalence_sets.keys():
+                equivalence_sets[io_string] = set()
+                
+            equivalence_sets[io_string].add(state)
+
+        return equivalence_sets
+    
+
+    def _get_dest_from_trigger(self, source: str, trigger: str) -> str:
+        """
+        Get the destination state from a given source state and trigger.
+        
+        Args:
+            source (str): The source state of the transition.
+            trigger (str): The trigger of the transition.
+            
+        Returns:
+            str: The destination state of the transition.
+        """
+        for transition in self.transitions:
+            if transition['source'] == source and transition['trigger'] == trigger:
+                return transition['dest']
+            
+        return None
+    
+
+    def _get_transitions(self, source: str=None, dest: str=None) -> list:
+        """
+        Get transitions from the machine.
+        
+        Args:
+            source (str): The source state of the transition.
+            dest (str): The destination state of the transition.
+            
+        Returns:
+            list: A list of transitions.
+        """
+        transitions = []
+
+        for transition in self.transitions:
+            if source and dest:
+                if transition['source'] == source and transition['dest'] == dest:
+                    transitions.append(transition)
+            elif source:
+                if transition['source'] == source:
+                    transitions.append(transition)
+            elif dest:
+                if transition['dest'] == dest:
+                    transitions.append(transition)
+
+        return transitions
+
+
+    def _find_equivalent_states(self) -> list[set]:
+        """
+        Find 2+-equivalent states with respect to their transitions.
+
+        Returns:
+            list: A list of sets of equivalent states.
+        """
+        previous_equivalence_dict = self._find_1_equivalent()
+
+        while True:
+            current_equivalence_dict = dict()
+
+            for key, eq_set in previous_equivalence_dict.items():
+                for state in eq_set:
+                    triggers = self._get_triggers(state)
+                    subset_pointer = key
+
+                    for trigger in triggers:
+                        trigger_input = trigger.split(" / ")[0]
+                        subset_pointer += trigger_input
+
+                        dest = self._get_dest_from_trigger(state, trigger)
+
+                        for key, eq_set in previous_equivalence_dict.items():
+                            if dest in eq_set:
+                                subset_pointer += key
+                                break
+
+                    if subset_pointer not in current_equivalence_dict.keys():
+                        current_equivalence_dict[subset_pointer] = set()
+                
+                    current_equivalence_dict[subset_pointer].add(state)
+                                                
+            if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
+                break
+
+            previous_equivalence_dict = current_equivalence_dict
+
+        equivalent_states = []
+        for eq_set in previous_equivalence_dict.values():
+            if len(eq_set) > 1:
+                equivalent_states.append(eq_set)
+
+        print("Equivalent states: " + str(equivalent_states))
+        return equivalent_states
+
+
+    def _make_minimal(self) -> None:
+        equivalence_states = self._find_equivalent_states()
+        equivalence_states = [list(eq_set) for eq_set in equivalence_states]
+
+        for eq_set in equivalence_states:
+            for state_index in range(1, len(eq_set)):
+                state = eq_set[state_index]
+
+                source_transitions = self._get_transitions(source=state)
+                dest_transitions = self._get_transitions(dest=state)
+
+                for transition in dest_transitions:
+                    transition["dest"] = eq_set[0]
+
+                for transition in source_transitions:
+                    transition["source"] = eq_set[0]
+
+                self.states.remove(state)
+
+
+    def _cleanup_transitions(self) -> None:
+        transitions = []
+        for transition in self.transitions:
+            if transition not in transitions:
+                transitions.append(transition)
+
+        self.transitions = transitions
+        
         
 if __name__ == '__main__':
     random_fsm = RandomGenerator()
