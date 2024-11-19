@@ -9,20 +9,18 @@ class RandomGenerator:
     ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
                 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     
-    MAX_NUM_STATES = 5
-    MAX_ALPHABET_LENGTH = 3
+    MAX_NUM_STATES = 7
+    MAX_ALPHABET_LENGTH = 2
     
     def __init__(self) -> None:
-        # self.states = [f'S{i}' for i in range(random.randint(
-        #     3, 
-        #     RandomGenerator.MAX_NUM_STATES))]
+        self.states = [f'S{i}' for i in range(random.randint(
+            3, 
+            RandomGenerator.MAX_NUM_STATES))]
         
-        # self.events = [RandomGenerator.ALPHABET[i] for i in range(random.randint(
-        #     2, 
-        #     RandomGenerator.MAX_ALPHABET_LENGTH))]
-        self.states = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-        self.events = ['0', '1']
-        
+        self.events = [RandomGenerator.ALPHABET[i] for i in range(random.randint(
+            2, 
+            RandomGenerator.MAX_ALPHABET_LENGTH))]
+
         self._try_generate_connected_machine()
         print(f"Machine with {len(self.states)} states and {len(self.events)} events created.")
 
@@ -31,30 +29,13 @@ class RandomGenerator:
         """
         Try to generate a connected machine. If the machine is not connected, try again.
         """
-        # connected = False
+        connected = False
 
-        # while not connected:
-        #     self.transitions = self._generate_transitions()        
-        #     connected = self._ensure_connected_machine()
+        while not connected:
+            self.transitions = self._generate_transitions()        
+            connected = self._ensure_connected_machine()
 
-        # self._add_leftover_transitions()
-        self.transitions = [
-            {'trigger': '0 / 0', 'source': 'A', 'dest': 'F'}, 
-            {'trigger': '0 / 0', 'source': 'B', 'dest': 'G'}, 
-            {'trigger': '0 / 0', 'source': 'C', 'dest': 'B'}, 
-            {'trigger': '0 / 0', 'source': 'D', 'dest': 'C'},
-            {'trigger': '0 / 0', 'source': 'E', 'dest': 'D'},
-            {'trigger': '0 / 1', 'source': 'F', 'dest': 'E'},
-            {'trigger': '0 / 1', 'source': 'G', 'dest': 'E'},
-            {'trigger': '1 / 1', 'source': 'A', 'dest': 'B'},
-            {'trigger': '1 / 1', 'source': 'B', 'dest': 'A'},
-            {'trigger': '1 / 1', 'source': 'C', 'dest': 'C'},
-            {'trigger': '1 / 1', 'source': 'D', 'dest': 'B'},
-            {'trigger': '1 / 1', 'source': 'E', 'dest': 'A'},
-            {'trigger': '1 / 1', 'source': 'F', 'dest': 'F'},
-            {'trigger': '1 / 1', 'source': 'G', 'dest': 'G'}
-        ]
-           
+        self._add_leftover_transitions()
         self._make_minimal()
         self._cleanup_transitions()
         self.machine = Machine(states=self.states, initial=self.states[0], 
@@ -192,8 +173,11 @@ class RandomGenerator:
 
             io_string = ""
             for trigger in triggers:
-                io_string += trigger
-
+                io_string += f"{trigger},"
+            
+            io_list = io_string.split(",")
+            io_list.sort()
+            io_string = "".join(io_list)
 
             if io_string not in equivalence_sets.keys():
                 equivalence_sets[io_string] = set()
@@ -273,8 +257,12 @@ class RandomGenerator:
 
                         for key, eq_set in previous_equivalence_dict.items():
                             if dest in eq_set:
-                                subset_pointer += key
+                                subset_pointer += f"{key},"
                                 break
+
+                    subset_pointer_list = subset_pointer.split(",")
+                    subset_pointer_list.sort()
+                    subset_pointer = "".join(subset_pointer_list)
 
                     if subset_pointer not in current_equivalence_dict.keys():
                         current_equivalence_dict[subset_pointer] = set()
@@ -327,6 +315,9 @@ class RandomGenerator:
 if __name__ == '__main__':
     random_fsm = RandomGenerator()
     random_fsm.machine.get_graph().draw('random_fsm.png', prog='dot')
+
+    if not os.path.exists('pickles'):
+        os.makedirs('pickles')
 
     num_pickles = len([file for file in os.listdir('pickles')])
     pickle.dump(random_fsm, open(f'pickles/random_fsm_{num_pickles}.pkl', 'wb'))
