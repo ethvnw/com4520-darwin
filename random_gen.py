@@ -10,7 +10,7 @@ class RandomGenerator:
                 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     
     MAX_NUM_STATES = 7
-    MAX_ALPHABET_LENGTH = 2
+    MAX_ALPHABET_LENGTH = 3
     
     def __init__(self) -> None:
         self.states = [f'S{i}' for i in range(random.randint(
@@ -314,10 +314,14 @@ class RandomGenerator:
         
 if __name__ == '__main__':
     random_fsm = RandomGenerator()
-    random_fsm.machine.get_graph().draw('random_fsm.png', prog='dot')
 
     if not os.path.exists('pickles'):
         os.makedirs('pickles')
 
     num_pickles = len([file for file in os.listdir('pickles')])
-    pickle.dump(random_fsm, open(f'pickles/random_fsm_{num_pickles}.pkl', 'wb'))
+    pickle.dump(random_fsm, open(f'pickles/fsm_{num_pickles}.pkl', 'wb'))
+
+    if not os.path.exists('fsm_imgs'):
+        os.makedirs('fsm_imgs')
+
+    random_fsm.machine.draw_graph().draw(f"fsm_imgs/fsm_{num_pickles}.png", prog='dot')

@@ -29,3 +29,13 @@ class Machine(GraphMachine):
             "parallel": {"color": "black", "fillcolor": "white", "style": "dotted"},
         },
     }
+
+    def draw_graph(self, title=None):
+        graph = self.get_graph(title=title)
+        self._add_initial_state_arrow(graph)
+        graph.graph_attr['label'] = title if title else ""
+        return graph
+    
+    def _add_initial_state_arrow(self, graph):
+        graph.add_node('initial', style='invis', width='0', shape='point')
+        graph.add_edge('initial', self.initial, style='solid')

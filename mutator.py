@@ -1,4 +1,5 @@
 import argparse
+import os
 import pickle
 import random
 
@@ -15,22 +16,30 @@ class Mutator:
     def __init__(self) -> None:
         parser = argparse.ArgumentParser(description='Mutator')
         parser.add_argument('--machine', type=str, help='Path to the machine pickle file')
-        args = parser.parse_args()
+        self.args = parser.parse_args()
 
-        if args.machine is None:
+        if self.args.machine is None:
             raise Exception('Path to the machine pickle file is required')
 
-        self.fsm = pickle.load(open(args.machine, 'rb'))
-        self.fsm.machine.get_graph().draw('original_fsm.png', prog='dot')
+        self.fsm = pickle.load(open(self.args.machine, 'rb'))
         self._create_mutated_fsm()
-        pickle.dump(self.fsm, open('mutated_machine.pkl', 'wb'))
+
 
     def _create_mutated_fsm(self):
         self._mutate()
         self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
                                    graph_engine="pygraphviz", auto_transitions=False,
                                    transitions=self.fsm.transitions)
-        self.fsm.machine.get_graph().draw('mutated_fsm.png', prog='dot')
+        
+        fsm_num = self.args.machine.split('_')[-1].split('.')[0]
+
+        if not os.path.exists('fsm_imgs/mutated'):
+            os.makedirs('fsm_imgs/mutated')
+        self.fsm.machine.get_graph().draw(f'fsm_imgs/mutated/mutated_{fsm_num}.png', prog='dot')
+        
+        if not os.path.exists('pickles/mutated'):
+            os.makedirs('pickles/mutated')    
+        pickle.dump(self.fsm, open(f'pickles/mutated/mutated_{fsm_num}.pkl', 'wb'))
 
 
     def _mutate(self):

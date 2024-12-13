@@ -162,3 +162,4 @@ cython_debug/
 #.idea/
 
 pickles/
+fsm_imgs/
