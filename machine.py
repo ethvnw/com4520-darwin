@@ -18,7 +18,7 @@ class Machine(GraphMachine):
                 "style": "dashed, rounded, filled",
                 "peripheries": "1",
             },
-            # "active": {"color": "red", "fillcolor": "darksalmon", "peripheries": "2"},
+            "active": {"color": "red", "fillcolor": "darksalmon", "peripheries": "2"},
             "previous": {"color": "blue", "fillcolor": "azure", "peripheries": "1"},
         },
         "edge": {"default": {"color": "black"}, "previous": {"color": "blue"}},

@@ -1,28 +1,16 @@
-import os
 import pickle
 import random
 
 from machine import Machine
 
 
-class RandomGenerator:
-    ALPHABET = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
-                'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    
-    MAX_NUM_STATES = 7
-    MAX_ALPHABET_LENGTH = 3
-    
-    def __init__(self) -> None:
-        self.states = [f'S{i}' for i in range(random.randint(
-            3, 
-            RandomGenerator.MAX_NUM_STATES))]
-        
-        self.events = [RandomGenerator.ALPHABET[i] for i in range(random.randint(
-            2, 
-            RandomGenerator.MAX_ALPHABET_LENGTH))]
+class FSMGenerator:
+ 
+    def __init__(self, num_states: int, num_inputs: int) -> None:
+        self.states = [f"S{i}" for i in range(num_states)]
+        self.events = [f"e{i}" for i in range(num_inputs)]
 
         self._try_generate_connected_machine()
-        print(f"Machine with {len(self.states)} states and {len(self.events)} events created.")
 
     
     def _try_generate_connected_machine(self) -> None:
@@ -279,11 +267,14 @@ class RandomGenerator:
             if len(eq_set) > 1:
                 equivalent_states.append(eq_set)
 
-        print("Equivalent states: " + str(equivalent_states))
+
         return equivalent_states
 
 
     def _make_minimal(self) -> None:
+        """
+        Make the machine minimal by removing redundant states.
+        """
         equivalence_states = self._find_equivalent_states()
         equivalence_states = [list(eq_set) for eq_set in equivalence_states]
 
@@ -304,24 +295,32 @@ class RandomGenerator:
 
 
     def _cleanup_transitions(self) -> None:
+        """
+        Remove duplicate transitions from the machine.
+        """
         transitions = []
         for transition in self.transitions:
             if transition not in transitions:
                 transitions.append(transition)
 
         self.transitions = transitions
-        
-        
-if __name__ == '__main__':
-    random_fsm = RandomGenerator()
 
-    if not os.path.exists('pickles'):
-        os.makedirs('pickles')
 
-    num_pickles = len([file for file in os.listdir('pickles')])
-    pickle.dump(random_fsm, open(f'pickles/fsm_{num_pickles}.pkl', 'wb'))
+    def save(self, filename: str) -> None:
+        """
+        Save the machine to a pickle file.
 
-    if not os.path.exists('fsm_imgs'):
-        os.makedirs('fsm_imgs')
+        Args:
+            filename (str): The name of the pickle file.
+        """
+        pickle.dump(self, open(filename, 'wb'))
 
-    random_fsm.machine.draw_graph().draw(f"fsm_imgs/fsm_{num_pickles}.png", prog='dot')
+
+    def draw(self, filename: str) -> None:
+        """
+        Draw the machine to a file. Specify extension in filename.
+
+        Args:
+            filename (str): The name of the file to save to.
+        """
+        self.machine.get_graph().draw(filename, prog='dot')
