@@ -32,3 +32,9 @@ Mutate the generated FSM with:
 ```bash
 python mutator.py --machine <path_to_fsm_pkl>
 ```
+
+Run experiments with:
+
+```bash
+python experiments.py
+```
