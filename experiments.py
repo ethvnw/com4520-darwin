@@ -56,7 +56,7 @@ if __name__ == '__main__':
         writer.writerow(["State Size", "Input Size", "Target Coverage", "Walk Length", "Time Taken"])
         
         total_tasks = len(state_sizes) * len(input_sizes) * 20 * len(percent_cov)
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = []
 
             with tqdm(total=total_tasks, desc="Running random walks") as pbar:

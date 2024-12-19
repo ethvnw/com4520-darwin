@@ -316,11 +316,11 @@ class FSMGenerator:
         pickle.dump(self, open(filename, 'wb'))
 
 
-    def draw(self, filename: str) -> None:
+    def draw(self, filename: str, title: str = None) -> None:
         """
         Draw the machine to a file. Specify extension in filename.
 
         Args:
             filename (str): The name of the file to save to.
         """
-        self.machine.get_graph().draw(filename, prog='dot')
+        self.machine.draw_graph(title).draw(filename, prog='dot')
