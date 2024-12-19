@@ -46,10 +46,7 @@ if __name__ == '__main__':
     print("Input sizes:", input_sizes)
     print("Percent coverages:", percent_cov)
 
-    if not os.path.exists("experiments"):
-        os.makedirs("experiments")
-
-    filename = f"experiments/experiment_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"experiment_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
     with open(filename, mode="w", newline="") as file:
         writer = csv.writer(file)
