@@ -29,7 +29,7 @@ def run_walk(state_size, input_size, index, percent):
     }
 
 
-def distibute_tasks(state_sizes, input_sizes, percent_cov, input_size_multipliers):
+def distribute_tasks(state_sizes, input_sizes, percent_cov, input_size_multipliers):
     tasks = []
     for state_size in state_sizes:
         for input_size_key in input_sizes:
@@ -55,32 +55,40 @@ if __name__ == '__main__':
     percent_cov = [80, 90, 95, 99.5]
     input_size_multipliers = {"2": 2,"n/2": 0.5,"n": 1,"2n": 2}
 
+    # Scatter tasks to ranks
     if rank == 0:
-        tasks = distibute_tasks(state_sizes, input_sizes, percent_cov, input_size_multipliers)
-        num_tasks = len(tasks)
+        tasks = distribute_tasks(state_sizes, input_sizes, percent_cov, input_size_multipliers)
+        total_tasks = len(tasks)
+        # Split tasks into chunks for scattering
+        chunks = [tasks[i::size] for i in range(size)]
     else:
-        tasks = None
-        num_tasks = None
+        chunks = None
+        total_tasks = None
 
-    num_tasks = comm.bcast(num_tasks, root=0)
+    # Broadcast total number of tasks to all ranks
+    total_tasks = comm.bcast(total_tasks, root=0)
 
-    task_chunks = comm.scatter([tasks[i::size] for i in range(size)] if rank == 0 else None, root=0)
+    # Scatter task chunks to all ranks
+    task_chunk = comm.scatter(chunks, root=0)
 
+    # Run assigned tasks
     results = []
-    for task in tasks:
+    for task in task_chunk:  # Iterate over the received chunk of tasks
         state_size, input_size, index, percent = task
         result_key, result = run_walk(state_size, input_size, index, percent)
         results.append((result_key, result))
 
+    # Gather results at rank 0
     all_results = comm.gather(results, root=0)
 
     if rank == 0:
-        with open(f"results_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv", "w") as f:
-            writer = csv.writer(f)
-            writer.writerow(["State Size", "Input Size", "Coverage", "Walk Length", "Time Taken"])
+        filename = f"result_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        with open(filename, mode="w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["State Size", "Input Size", "Target Coverage", "Walk Length", "Time Taken"])
 
-            with tqdm(total=num_tasks, desc="Running walks") as pbar:
-                for result in all_results:
-                    for key, result in result:
-                        save_to_csv_row(writer, key, result)
+            with tqdm(total=total_tasks, desc="Running random walks") as pbar:
+                for result_set in all_results:
+                    for result_key, result in result_set:
+                        save_to_csv_row(writer, result_key, result)
                         pbar.update(1)
