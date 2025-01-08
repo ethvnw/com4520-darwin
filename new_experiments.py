@@ -59,6 +59,7 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+
     state_sizes = [5, 10, 20, 40]
     input_sizes = ["2", "n/2", "n", "2n"]
     percent_cov = [80, 90, 95, 99.5]
