@@ -45,10 +45,16 @@ def distribute_tasks(state_sizes, input_sizes, percent_cov, input_size_multiplie
     return tasks
 
 
+def run_task(task):
+    state_size, input_size, index, percent = task
+    return run_walk(state_size, input_size, index, percent)
+
+
 if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
+
 
     state_sizes = [5, 10, 20, 40]
     input_sizes = ["2", "n/2", "n", "2n"]
@@ -61,6 +67,7 @@ if __name__ == '__main__':
         total_tasks = len(tasks)
         # Split tasks into chunks for scattering
         chunks = [tasks[i::size] for i in range(size)]
+        print(f"Running {total_tasks} tasks with {size} ranks")
     else:
         chunks = None
         total_tasks = None
@@ -71,9 +78,9 @@ if __name__ == '__main__':
     # Scatter task chunks to all ranks
     task_chunk = comm.scatter(chunks, root=0)
 
-    # Run assigned tasks
+    # Run assigned tasks with progress bar
     results = []
-    for task in task_chunk:  # Iterate over the received chunk of tasks
+    for task in tqdm(task_chunk, desc=f"Rank {rank}", leave=True, position=rank, dynamic_ncols=True):
         state_size, input_size, index, percent = task
         result_key, result = run_walk(state_size, input_size, index, percent)
         results.append((result_key, result))
@@ -87,8 +94,6 @@ if __name__ == '__main__':
             writer = csv.writer(file)
             writer.writerow(["State Size", "Input Size", "Target Coverage", "Walk Length", "Time Taken"])
 
-            with tqdm(total=total_tasks, desc="Running random walks") as pbar:
-                for result_set in all_results:
-                    for result_key, result in result_set:
-                        save_to_csv_row(writer, result_key, result)
-                        pbar.update(1)
+            for result_set in all_results:
+                for result_key, result in result_set:
+                    save_to_csv_row(writer, result_key, result)
