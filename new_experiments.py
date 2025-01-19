@@ -33,6 +33,10 @@ def distribute_tasks(state_sizes, input_sizes, percent_cov, input_size_multiplie
     tasks = []
     for state_size in state_sizes:
         for input_size_key in input_sizes:
+            if state_size == 20 or state_size == 40:
+                if input_size_key == "2":
+                    continue
+                
             if input_size_key == "2":
                 input_size = 2
             else:
