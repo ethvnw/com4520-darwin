@@ -21,7 +21,7 @@ class FSMGenerator:
 
         while not connected:
             self.transitions = self._generate_transitions()        
-            connected = self._ensure_connected_machine()
+            connected = self.ensure_connected_machine()
 
         self._add_leftover_transitions()
         self._make_minimal()
@@ -119,7 +119,7 @@ class FSMGenerator:
                 })
         
 
-    def _ensure_connected_machine(self) -> bool:
+    def ensure_connected_machine(self) -> bool:
         """
         Ensure that all states are reachable from any other state.
 
