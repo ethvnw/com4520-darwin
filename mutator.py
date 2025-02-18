@@ -7,6 +7,7 @@ from machine import Machine
 
 
 class Mutator:
+    #MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
     MUTATION_TYPES = ['add_state', 'change_trigger_output', 'change_trans_dest']
 
 
@@ -84,39 +85,80 @@ class Mutator:
         self.mutations_applied.append(f"Added state {new_state} using {source_state_trans}")
     
 
-    # TODO: Implement remove_state
+    # TODO: See if a state transitioning to itself should be accounted for checking incoming > outgoing
     def _remove_state(self):
-        pass
+        # Ensure initial state cannot be removed
+        state_to_remove = random.choice([state for state in self.fsm.states if state not in ["S0"]])
+        print (state_to_remove)
+        print (self._get_num_transitions(state_to_remove, True))
+        print (self._get_num_transitions(state_to_remove, False))
+
+        # Only remove states if they have equal or more incoming transitions as outgoing transitions
+        if self._get_num_transitions(state_to_remove, True) >= self._get_num_transitions(state_to_remove, False):
+            outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
+            incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
+
+            # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
+            dest_states = []
+            for transition in outgoing_state_trans:
+                self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
+                print (transition)
+                dest_states.append(transition["dest"])
+            random.shuffle(dest_states)
+
+            # Reroute incoming transitions to previously found destination states
+            for transition in incoming_state_trans:
+                if len(dest_states) > 0:
+                    dest_state = dest_states[0]
+                    transition["source"] = dest_state
+                    dest_states = dest_states[1:]
+                else:
+                    dest_state = random.choice(self.fsm.states)
+                    transition["source"] = dest_state
+
+            self.fsm.states.remove(state_to_remove)
+            print (self.fsm.states)
+
+            self.mutations_applied.append(f"Removed state {state_to_remove}")
 
 
     def _change_trigger_output(self):
         transition = random.choice(self.fsm.transitions)
-        self.mutations_applied.append(f"Changed trigger output of transition {transition}")
 
         transition_trigger = transition["trigger"].split(' / ')
         transition["trigger"] = f'{transition_trigger[0]} / {1 - int(transition_trigger[1])}'
 
+        self.mutations_applied.append(f"Changed trigger output of transition {transition}")
 
 
-    def _get_num_incoming_transitions(self, state):
-        num_incoming = 0
+    def _get_num_transitions(self, state, incoming: bool):
+        num_trans = 0
 
         for transition in self.fsm.transitions:
-            if transition["dest"] == state:
-                num_incoming +=1
+            if incoming:
+                if transition["dest"] == state:
+                    num_trans +=1
+            else:
+                if transition["source"] == state:
+                    num_trans += 1
 
-        return num_incoming
+        return num_trans
 
     
     def _change_trans_dest(self):
         transition = random.choice(self.fsm.transitions)
 
         # ensures fsm is connected still
-        while self._get_num_incoming_transitions(transition["dest"]) < 2:
+        while self._get_num_transitions(transition["dest"], True) < 2:
             transition = random.choice(self.fsm.transitions)
-        self.mutations_applied.append(f"Changed destination of transition {transition}")
 
-        transition["dest"] = random.choice(self.fsm.states)
+        # Make sure random destination state cannot be the same state as before
+        random_dest = transition["dest"]
+        while random_dest == transition["dest"]:
+            random_dest = random.choice(self.fsm.states)
+        transition["dest"] = random_dest
+
+        self.mutations_applied.append(f"Changed destination of transition {transition}")
 
 
     def _check_determinism(self):
