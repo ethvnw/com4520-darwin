@@ -7,8 +7,8 @@ from machine import Machine
 
 
 class Mutator:
-    #MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
-    MUTATION_TYPES = ['add_state', 'change_trigger_output', 'change_trans_dest']
+    MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
+    # MUTATION_TYPES = ['add_state', 'change_trigger_output', 'change_trans_dest']
 
 
     def __init__(self, fsm: FSMGenerator) -> None:
@@ -110,11 +110,11 @@ class Mutator:
             for transition in incoming_state_trans:
                 if len(dest_states) > 0:
                     dest_state = dest_states[0]
-                    transition["source"] = dest_state
+                    transition["dest"] = dest_state
                     dest_states = dest_states[1:]
                 else:
                     dest_state = random.choice(self.fsm.states)
-                    transition["source"] = dest_state
+                    transition["dest"] = dest_state
 
             self.fsm.states.remove(state_to_remove)
             print (self.fsm.states)
