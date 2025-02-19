@@ -25,11 +25,11 @@ class Mutator:
                                    graph_engine="pygraphviz", auto_transitions=False,
                                    transitions=self.fsm.transitions)
         
-        if not self.get_machine_properties():
-            print("Mutated FSM is not deterministic or connected. Trying again...")
-            self.mutations_applied = []
-            self.fsm = self.original_fsm
-            self._create_mutated_fsm()
+        #if not self.get_machine_properties():
+        #    print("Mutated FSM is not deterministic or connected. Trying again...")
+        #    self.mutations_applied = []
+        #    self.fsm = self.original_fsm
+        #    self._create_mutated_fsm()
         
         if not os.path.exists('fsm_imgs/mutated'):
             os.makedirs('fsm_imgs/mutated')
@@ -101,38 +101,51 @@ class Mutator:
             state_to_remove = random.choice(states_to_check)
 
             if self._get_num_transitions_exclude_loops(state_to_remove, True) >= self._get_num_transitions_exclude_loops(state_to_remove, False):
-                state_found = True
+                # Store original states and transitions in case the machine needs to be reverted
+                original_states = self.fsm.states[:]
+                original_transitions = self.fsm.transitions[:]
+
+                # Only remove states if they have equal or more incoming transitions as outgoing transitions
+                outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
+                incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
+
+                # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
+                dest_states = []
+                for transition in outgoing_state_trans:
+                    self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
+                    if transition["dest"] != state_to_remove:
+                        dest_states.append(transition["dest"])
+
+                random.shuffle(dest_states)
+
+                self.fsm.states.remove(state_to_remove)
+                # Reroute incoming transitions to previously found destination states
+                for transition in incoming_state_trans:
+                    if len(dest_states) > 0:
+                        dest_state = dest_states[0]
+                        transition["dest"] = dest_state
+                        dest_states = dest_states[1:]
+                    else:
+                        dest_state = random.choice([state for state in self.fsm.states if state != transition["source"]])
+                        transition["dest"] = dest_state
+
+                # Check that connectivity is maintained when this state is removed
+                if self.fsm.ensure_connected_machine:
+                    state_found = True
+                    self.mutations_applied.append(f"Removed state {state_to_remove}")
+                else:
+                    self.fsm.states = original_states
+                    self.fsm.transitions = original_transitions
+                    states_to_check.remove(state_to_remove)
             else:
                 states_to_check.remove(state_to_remove)
 
+        # TODO: Apply different mutation type
         if not state_found:
+            print ("TRY DIFFERENT MUTATION TYPE")
             return
 
-        # Only remove states if they have equal or more incoming transitions as outgoing transitions
-        outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
-        incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
-
-        # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
-        dest_states = []
-        for transition in outgoing_state_trans:
-            self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
-            if transition["dest"] != state_to_remove:
-                dest_states.append(transition["dest"])
-
-        random.shuffle(dest_states)
-
-        self.fsm.states.remove(state_to_remove)
-        # Reroute incoming transitions to previously found destination states
-        for transition in incoming_state_trans:
-            if len(dest_states) > 0:
-                dest_state = dest_states[0]
-                transition["dest"] = dest_state
-                dest_states = dest_states[1:]
-            else:
-                dest_state = random.choice([state for state in self.fsm.states if state != transition["source"]])
-                transition["dest"] = dest_state
-
-        self.mutations_applied.append(f"Removed state {state_to_remove}")
+        
 
 
     def _change_trigger_output(self):
