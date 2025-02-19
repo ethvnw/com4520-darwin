@@ -12,6 +12,7 @@ class Mutator:
 
 
     def __init__(self, fsm: FSMGenerator) -> None:
+        self.original_fsm = fsm
         self.fsm = fsm
         self.num_mutations = int(0.4 * len(self.fsm.states))
         self.mutations_applied = []
@@ -23,6 +24,12 @@ class Mutator:
         self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
                                    graph_engine="pygraphviz", auto_transitions=False,
                                    transitions=self.fsm.transitions)
+        
+        if not self.get_machine_properties():
+            print("Mutated FSM is not deterministic or connected. Trying again...")
+            self.mutations_applied = []
+            self.fsm = self.original_fsm
+            self._create_mutated_fsm()
         
         if not os.path.exists('fsm_imgs/mutated'):
             os.makedirs('fsm_imgs/mutated')
@@ -85,41 +92,47 @@ class Mutator:
         self.mutations_applied.append(f"Added state {new_state} using {source_state_trans}")
     
 
-    # TODO: See if a state transitioning to itself should be accounted for checking incoming > outgoing
     def _remove_state(self):
         # Ensure initial state cannot be removed
-        state_to_remove = random.choice([state for state in self.fsm.states if state not in ["S0"]])
-        print (state_to_remove)
-        print (self._get_num_transitions(state_to_remove, True))
-        print (self._get_num_transitions(state_to_remove, False))
+        states_to_check = [state for state in self.fsm.states if state not in ["S0"]]
+        state_found = False
+
+        while len(states_to_check) != 0 and not state_found:
+            state_to_remove = random.choice(states_to_check)
+
+            if self._get_num_transitions_exclude_loops(state_to_remove, True) >= self._get_num_transitions_exclude_loops(state_to_remove, False):
+                state_found = True
+            else:
+                states_to_check.remove(state_to_remove)
+
+        if not state_found:
+            return
 
         # Only remove states if they have equal or more incoming transitions as outgoing transitions
-        if self._get_num_transitions(state_to_remove, True) >= self._get_num_transitions(state_to_remove, False):
-            outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
-            incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
+        outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
+        incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
 
-            # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
-            dest_states = []
-            for transition in outgoing_state_trans:
-                self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
-                print (transition)
+        # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
+        dest_states = []
+        for transition in outgoing_state_trans:
+            self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
+            if transition["dest"] != state_to_remove:
                 dest_states.append(transition["dest"])
-            random.shuffle(dest_states)
 
-            # Reroute incoming transitions to previously found destination states
-            for transition in incoming_state_trans:
-                if len(dest_states) > 0:
-                    dest_state = dest_states[0]
-                    transition["dest"] = dest_state
-                    dest_states = dest_states[1:]
-                else:
-                    dest_state = random.choice(self.fsm.states)
-                    transition["dest"] = dest_state
+        random.shuffle(dest_states)
 
-            self.fsm.states.remove(state_to_remove)
-            print (self.fsm.states)
+        self.fsm.states.remove(state_to_remove)
+        # Reroute incoming transitions to previously found destination states
+        for transition in incoming_state_trans:
+            if len(dest_states) > 0:
+                dest_state = dest_states[0]
+                transition["dest"] = dest_state
+                dest_states = dest_states[1:]
+            else:
+                dest_state = random.choice([state for state in self.fsm.states if state != transition["source"]])
+                transition["dest"] = dest_state
 
-            self.mutations_applied.append(f"Removed state {state_to_remove}")
+        self.mutations_applied.append(f"Removed state {state_to_remove}")
 
 
     def _change_trigger_output(self):
@@ -131,15 +144,15 @@ class Mutator:
         self.mutations_applied.append(f"Changed trigger output of transition {transition}")
 
 
-    def _get_num_transitions(self, state, incoming: bool):
+    def _get_num_transitions_exclude_loops(self, state, incoming: bool):
         num_trans = 0
 
         for transition in self.fsm.transitions:
             if incoming:
-                if transition["dest"] == state:
+                if transition["dest"] == state and transition["source"] != state:
                     num_trans +=1
             else:
-                if transition["source"] == state:
+                if transition["source"] == state and transition["dest"] != state:
                     num_trans += 1
 
         return num_trans
@@ -149,7 +162,7 @@ class Mutator:
         transition = random.choice(self.fsm.transitions)
 
         # ensures fsm is connected still
-        while self._get_num_transitions(transition["dest"], True) < 2:
+        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2:
             transition = random.choice(self.fsm.transitions)
 
         # Make sure random destination state cannot be the same state as before
@@ -176,3 +189,5 @@ class Mutator:
         deterministic = self._check_determinism()
 
         print(f"\nConnected: {connected}, Deterministic: {deterministic}")
+
+        return connected and deterministic
