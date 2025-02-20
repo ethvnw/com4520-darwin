@@ -324,3 +324,16 @@ class FSMGenerator:
             filename (str): The name of the file to save to.
         """
         self.machine.draw_graph(title).draw(filename, prog='dot')
+
+
+    def apply_input_sequence(self, state: str, sequence: str) -> tuple:
+        output_seq = []
+
+        for event in sequence:
+            for transition in self.transitions:
+                if transition['source'] == state and transition['trigger'].startswith(event):
+                    output_seq.append(transition['trigger'].split(" / ")[1])
+                    state = transition['dest']
+                    break
+
+        return state, tuple(output_seq)
