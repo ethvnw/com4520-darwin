@@ -8,14 +8,12 @@ from machine import Machine
 
 
 class Mutator:
-    # MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
-    MUTATION_TYPES = ['change_trans_dest']
+    MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
 
 
     def __init__(self, fsm: FSMGenerator) -> None:
         self.original_fsm = fsm
         self.fsm = fsm
-        # self.num_mutations = int(0.2 * len(self.fsm.states))
         self.num_mutations = int(0.4 * len(self.fsm.states))
         self.mutations_applied = []
         self._create_mutated_fsm()
