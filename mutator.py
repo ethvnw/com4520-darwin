@@ -10,7 +10,6 @@ from machine import Machine
 class Mutator:
     MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
 
-
     def __init__(self, fsm: FSMGenerator) -> None:
         self.original_fsm = fsm
         self.fsm = fsm
@@ -100,6 +99,7 @@ class Mutator:
         # Store original states and transitions in case the machine needs to be reverted
         original_states = copy.deepcopy(self.fsm.states)
         original_transitions = copy.deepcopy(self.fsm.transitions)
+        original_fsm = copy.deepcopy(self.fsm)
 
         while len(states_to_check) != 0 and not state_found:
             state_to_remove = random.choice(states_to_check)
@@ -134,15 +134,18 @@ class Mutator:
                     state_found = True
                     self.mutations_applied.append(f"Removed state {state_to_remove}")
                 else:
+                    self.fsm = original_fsm
                     self.fsm.states = original_states[:]
                     self.fsm.transitions = original_transitions[:]
+                    self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
+                                               graph_engine="pygraphviz", auto_transitions=False,
+                                               transitions=self.fsm.transitions)
                     states_to_check.remove(state_to_remove)
             else:
                 states_to_check.remove(state_to_remove)
 
         # Apply different mutation type if a state cannot be removed
         if not state_found:
-            print ("Cannot remove state, trying other mutation type.")
             alternative_mutations = [self._change_trans_dest, self._change_trigger_output]
             alternative_mutation_choice = random.choice([0,1])
             alternative_mutations[alternative_mutation_choice]()
@@ -173,6 +176,8 @@ class Mutator:
     
     def _change_trans_dest(self):
         original_transitions = copy.deepcopy(self.fsm.transitions)
+        original_fsm = copy.deepcopy(self.fsm)
+
         transition = random.choice(self.fsm.transitions)
 
         # Ensures FSM is connected still
@@ -190,8 +195,11 @@ class Mutator:
             self.mutations_applied.append(f"Changed destination of transition {transition}")
         else:
             self.fsm.transitions = original_transitions
-            alternative_mutations = [self._remove_state, self._change_trigger_output, self._change_trans_dest]
-            alternative_mutation_choice = random.choice([0,1,2])
+            self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
+                                       graph_engine="pygraphviz", auto_transitions=False,
+                                       transitions=self.fsm.transitions)
+            alternative_mutations = [self._change_trigger_output, self._change_trans_dest]
+            alternative_mutation_choice = random.choice([0,1])
             alternative_mutations[alternative_mutation_choice]()
 
 
