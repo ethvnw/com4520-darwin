@@ -239,7 +239,9 @@ class FSMGenerator:
 
                     for trigger in triggers:
                         trigger_input = trigger.split(" / ")[0]
+                        trigger_output = trigger.split(" / ")[1]
                         subset_pointer += trigger_input
+                        subset_pointer += trigger_output
 
                         dest = self._get_dest_from_trigger(state, trigger)
 
