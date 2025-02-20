@@ -1,3 +1,4 @@
+import copy
 import os
 import pickle
 import random
@@ -7,13 +8,14 @@ from machine import Machine
 
 
 class Mutator:
-    MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
-    # MUTATION_TYPES = ['add_state', 'change_trigger_output', 'change_trans_dest']
+    # MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
+    MUTATION_TYPES = ['change_trans_dest']
 
 
     def __init__(self, fsm: FSMGenerator) -> None:
         self.original_fsm = fsm
         self.fsm = fsm
+        # self.num_mutations = int(0.2 * len(self.fsm.states))
         self.num_mutations = int(0.4 * len(self.fsm.states))
         self.mutations_applied = []
         self._create_mutated_fsm()
@@ -94,17 +96,17 @@ class Mutator:
 
     def _remove_state(self):
         # Ensure initial state cannot be removed
-        states_to_check = [state for state in self.fsm.states if state not in ["S0"]]
+        states_to_check = [state for state in self.fsm.states if state not in self.fsm.states[0]]
         state_found = False
+
+        # Store original states and transitions in case the machine needs to be reverted
+        original_states = copy.deepcopy(self.fsm.states)
+        original_transitions = copy.deepcopy(self.fsm.transitions)
 
         while len(states_to_check) != 0 and not state_found:
             state_to_remove = random.choice(states_to_check)
 
             if self._get_num_transitions_exclude_loops(state_to_remove, True) >= self._get_num_transitions_exclude_loops(state_to_remove, False):
-                # Store original states and transitions in case the machine needs to be reverted
-                original_states = self.fsm.states[:]
-                original_transitions = self.fsm.transitions[:]
-
                 # Only remove states if they have equal or more incoming transitions as outgoing transitions
                 outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
                 incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
@@ -130,22 +132,22 @@ class Mutator:
                         transition["dest"] = dest_state
 
                 # Check that connectivity is maintained when this state is removed
-                if self.fsm.ensure_connected_machine:
+                if self.fsm.ensure_connected_machine():
                     state_found = True
                     self.mutations_applied.append(f"Removed state {state_to_remove}")
                 else:
-                    self.fsm.states = original_states
-                    self.fsm.transitions = original_transitions
+                    self.fsm.states = original_states[:]
+                    self.fsm.transitions = original_transitions[:]
                     states_to_check.remove(state_to_remove)
             else:
                 states_to_check.remove(state_to_remove)
 
-        # TODO: Apply different mutation type
+        # Apply different mutation type if a state cannot be removed
         if not state_found:
-            print ("TRY DIFFERENT MUTATION TYPE")
-            return
-
-        
+            print ("Cannot remove state, trying other mutation type.")
+            alternative_mutations = [self._change_trans_dest, self._change_trigger_output]
+            alternative_mutation_choice = random.choice([0,1])
+            alternative_mutations[alternative_mutation_choice]()
 
 
     def _change_trigger_output(self):
@@ -172,9 +174,10 @@ class Mutator:
 
     
     def _change_trans_dest(self):
+        original_transitions = copy.deepcopy(self.fsm.transitions)
         transition = random.choice(self.fsm.transitions)
 
-        # ensures fsm is connected still
+        # Ensures FSM is connected still
         while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2:
             transition = random.choice(self.fsm.transitions)
 
@@ -184,7 +187,15 @@ class Mutator:
             random_dest = random.choice(self.fsm.states)
         transition["dest"] = random_dest
 
-        self.mutations_applied.append(f"Changed destination of transition {transition}")
+        # Don't apply mutation is connectivity is lost
+        if self.fsm.ensure_connected_machine():
+            self.mutations_applied.append(f"Changed destination of transition {transition}")
+        else:
+            self.fsm.transitions = original_transitions
+            alternative_mutations = [self._remove_state, self._change_trigger_output, self._change_trans_dest]
+            alternative_mutation_choice = random.choice([0,1,2])
+            alternative_mutations[alternative_mutation_choice]()
+
 
 
     def _check_determinism(self):
