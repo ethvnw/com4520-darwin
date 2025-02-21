@@ -32,7 +32,8 @@ class Mutator:
         
         if not os.path.exists('fsm_imgs/mutated'):
             os.makedirs('fsm_imgs/mutated')
-        self.fsm.draw(f'fsm_imgs/mutated/mutated.png')
+        if not self._check_connectivity():
+            self.fsm.draw(f'fsm_imgs/mutated/mutated.png')
         
         if not os.path.exists('pickles/mutated'):
             os.makedirs('pickles/mutated')    
@@ -130,7 +131,7 @@ class Mutator:
                         transition["dest"] = dest_state
 
                 # Check that connectivity is maintained when this state is removed
-                if self.fsm.ensure_connected_machine():
+                if self._check_connectivity():
                     state_found = True
                     self.mutations_applied.append(f"Removed state {state_to_remove}")
                 else:
@@ -191,7 +192,7 @@ class Mutator:
         transition["dest"] = random_dest
 
         # Don't apply mutation is connectivity is lost
-        if self.fsm.ensure_connected_machine():
+        if self._check_connectivity():
             self.mutations_applied.append(f"Changed destination of transition {transition}")
         else:
             self.fsm.transitions = original_transitions
@@ -201,7 +202,6 @@ class Mutator:
             alternative_mutations = [self._change_trigger_output, self._change_trans_dest]
             alternative_mutation_choice = random.choice([0,1])
             alternative_mutations[alternative_mutation_choice]()
-
 
 
     def _check_determinism(self):
@@ -214,8 +214,28 @@ class Mutator:
         return True
 
 
+    def _check_connectivity(self):
+        def dfs(start_state):
+            visited = set()
+            stack = [start_state]
+            while stack:
+                state = stack.pop()
+                if state not in visited:
+                    visited.add(state)
+                    for transition in self.fsm.transitions:
+                        if transition['source'] == state:
+                            stack.append(transition['dest'])
+            return visited
+
+        all_states = set(self.fsm.states)
+        for state in self.fsm.states:
+            if dfs(state) != all_states:
+                return False
+            
+        return True
+
     def get_machine_properties(self):
-        connected = self.fsm.ensure_connected_machine()
+        connected = self._check_connectivity()
         deterministic = self._check_determinism()
 
         print(f"\nConnected: {connected}, Deterministic: {deterministic}")
