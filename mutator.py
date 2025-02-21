@@ -42,6 +42,7 @@ class Mutator:
 
     def _mutate(self):
         for _ in range(self.num_mutations):
+            original_fsm = copy.deepcopy(self.fsm)
             mutation = random.choice(self.MUTATION_TYPES)
 
             match mutation:
@@ -53,6 +54,11 @@ class Mutator:
                     self._change_trigger_output()
                 case 'change_trans_dest':
                     self._change_trans_dest()
+
+            # Ensure connectivity after each mutation and apply change trigger output as a fallback
+            if not self._check_connectivity():
+                self.fsm = original_fsm
+                self._change_trigger_output()
 
         print("Mutations applied:")
         for mutation in self.mutations_applied:
