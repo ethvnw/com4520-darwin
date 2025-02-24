@@ -1,7 +1,7 @@
-from enum import Enum
 import random
-from machine import Machine
+from enum import Enum
 
+from fsm_gen.machine import Machine
 
 
 class RandomWalk:

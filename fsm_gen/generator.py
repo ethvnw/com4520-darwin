@@ -1,7 +1,8 @@
 import pickle
 import random
+from pathlib import Path
 
-from machine import Machine
+from fsm_gen.machine import Machine
 
 
 class FSMGenerator:
@@ -319,12 +320,15 @@ class FSMGenerator:
 
     def draw(self, filename: str, title: str = None) -> None:
         """
-        Draw the machine to a file. Specify extension in filename.
+        Draw the machine and save to a file in the 'fsm_imgs/' directory.
+        Specify extension in filename.
 
         Args:
             filename (str): The name of the file to save to.
+            title (str): The title of the graph.
         """
-        self.machine.draw_graph(title).draw(filename, prog='dot')
+        Path("fsm_imgs").mkdir(parents=True, exist_ok=True)
+        self.machine.draw_graph(title).draw(f"fsm_imgs/{filename}", prog='dot')
 
 
     def apply_input_sequence(self, state: str, sequence: str) -> tuple:

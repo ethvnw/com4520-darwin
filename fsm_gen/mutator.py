@@ -3,8 +3,8 @@ import os
 import pickle
 import random
 
-from random_gen import FSMGenerator
-from machine import Machine
+from fsm_gen.generator import FSMGenerator
+from fsm_gen.machine import Machine
 
 
 class Mutator:
@@ -14,25 +14,25 @@ class Mutator:
         self.fsm = fsm
         self.num_mutations = int(0.4 * len(self.fsm.states))
         self.mutations_applied = []
-        self._create_mutated_fsm()
 
 
-    def _create_mutated_fsm(self):
+    def create_mutated_fsm(self):
         """
         Apply mutations to a given finite state machine, store the result and render the mutated FSM.
+
+        Returns:
+            Machine: The mutated FSM
         """
         self._mutate()
         self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
                                    graph_engine="pygraphviz", auto_transitions=False,
                                    transitions=self.fsm.transitions)
         
-        if not os.path.exists('fsm_imgs/mutated'):
-            os.makedirs('fsm_imgs/mutated')
-        self.fsm.draw(f'fsm_imgs/mutated/mutated.png')
-        
         if not os.path.exists('pickles/mutated'):
             os.makedirs('pickles/mutated')    
         pickle.dump(self.fsm, open(f'pickles/mutated/mutated.pkl', 'wb'))
+
+        return self.fsm
 
 
     def _mutate(self):

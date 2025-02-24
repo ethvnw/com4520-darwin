@@ -1,6 +1,8 @@
-from machine import Machine
-from random_gen import FSMGenerator
 from itertools import product
+
+from fsm_gen.generator import FSMGenerator
+from fsm_gen.machine import Machine
+
 
 class HSI:
 

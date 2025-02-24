@@ -1,10 +1,11 @@
+import concurrent.futures
 import csv
 import datetime
-import concurrent.futures
-import os
+
 from tqdm import tqdm
-from random_gen import FSMGenerator
-from random_walk import RandomWalk
+
+from fsm_gen.generator import FSMGenerator
+from walks.random_walk import RandomWalk
 
 
 def save_to_csv_row(writer, key, result):

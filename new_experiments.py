@@ -1,8 +1,8 @@
 import csv
 import datetime
 from tqdm import tqdm
-from random_gen import FSMGenerator
-from random_walk import RandomWalk
+from fsm_gen.generator import FSMGenerator
+from walks.random_walk import RandomWalk
 from mpi4py import MPI
 
 

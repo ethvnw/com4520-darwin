@@ -1,5 +1,6 @@
 from transitions.extensions import GraphMachine
 
+
 class Machine(GraphMachine):
     style_attributes = {
         "node": {

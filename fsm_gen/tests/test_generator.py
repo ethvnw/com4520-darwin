@@ -1,4 +1,4 @@
-from random_gen import FSMGenerator
+from fsm_gen.generator import FSMGenerator
 import collections
 
 
