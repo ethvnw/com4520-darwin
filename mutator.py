@@ -174,7 +174,7 @@ class Mutator:
         self.mutations_applied.append(f"Changed trigger output of transition {transition}")
 
 
-    def _get_num_transitions_exclude_loops(self, state: str, incoming: bool):
+    def _get_num_transitions_exclude_loops(self, state: str, incoming: bool) -> int:
         """
         Retrieve the number of transitions coming into or going out of a state (whilst ignoring those 
         that trigger loops within the same state).
@@ -182,6 +182,9 @@ class Mutator:
         Args:
             state (str): The state to check transitions for.
             incoming (bool): Whether to check for incoming transitions (True) or outgoing transitions (False).
+
+        Returns:
+            int: The number of transitions incoming/outgoing for a specific state (excluding self-loops).
         """
         num_trans = 0
 
@@ -229,9 +232,12 @@ class Mutator:
             alternative_mutations[alternative_mutation_choice]()
 
 
-    def _check_determinism(self):
+    def _check_determinism(self) -> bool:
         """
         For the FSM, determine whether or not it is deterministic (has only 1 of each input symbol per state).
+
+        Returns:
+            bool: Whether or not the machine is deterministic.
         """
         for state in self.fsm.states:
             transitions = [t for t in self.fsm.transitions if t["source"] == state]
@@ -242,9 +248,12 @@ class Mutator:
         return True
 
 
-    def _check_connectivity(self):
+    def _check_connectivity(self) -> bool:
         """
         For the FSM, determine whether or not it is connected (any given state can be reached from any other state).
+
+        Returns:
+            bool: Whether or not the machine is connected.
         """
         def dfs(start_state):
             visited = set()
