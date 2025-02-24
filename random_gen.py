@@ -5,7 +5,6 @@ from machine import Machine
 
 
 class FSMGenerator:
- 
     def __init__(self, num_states: int, num_inputs: int) -> None:
         self.states = [f"S{i}" for i in range(num_states)]
         self.events = [f"{chr(i + 65)}" for i in range(num_inputs)]
