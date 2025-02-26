@@ -1,3 +1,45 @@
+### tests to do ###
+
+## generator ##
+# ensure connectivity #
+# ensure minimalism # 
+# ensure determinism # 
+
+## all generator functions ## 
+
+# try_generate_connected_machine()
+
+# generate_transitions()
+
+# is_reachable_from()
+
+# _get_triggers()
+
+# _add_leftover_transitions()
+
+# ensure_connected_machine()
+
+# _find_1_equivalent()
+
+# _get_dest_from_trigger()
+
+# _get_transitions()
+
+# _find_equivalent_states()
+
+# _make_minimal()
+
+# _cleanup_transitions()
+
+# save()
+
+# draw()
+
+# apply_input_sequence()
+
+
+
+
 from fsm_gen.generator import FSMGenerator
 import collections
 

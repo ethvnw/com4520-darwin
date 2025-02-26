@@ -1,3 +1,33 @@
+## mutator ##
+# add state #
+# remove state # 
+# change trigger output # 
+# change transition destination # 
+
+## all mutator functions ##
+
+# create_mutated_fsm()
+
+# _mutate()
+
+# _add_state()
+
+# _remove_state()
+
+# _change_trigger_output()
+
+# _get_num_transitions_exclude_loops()
+
+# _change_trans_dest()
+
+# _check determinism()
+
+# _check connectivity()
+
+    # dfs()
+
+# get_machine_properties()
+
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.mutator import Mutator
 
