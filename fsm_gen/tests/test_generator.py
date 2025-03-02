@@ -5,7 +5,6 @@ import random
 from fsm_gen.generator import FSMGenerator
 
 
-
 # Test that the generator creates a FSM and its states and transition numbers are correct
 def test_fsm_creation():
     fsm = FSMGenerator(num_states=4, num_inputs=3)
@@ -107,6 +106,32 @@ def test_add_leftover_transitions():
     fsm._add_leftover_transitions()
     assert len(fsm.transitions) >= initial_transitions
 
+# Test finding 1-equivalent states
+def test_find_1_equivalent():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    equivalence_sets = fsm._find_1_equivalent()
+    assert isinstance(equivalence_sets, dict)
+    for key, value in equivalence_sets.items():
+        assert isinstance(value, set)
+
+# Test getting the destination state from a trigger
+def test_get_dest_from_trigger():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    state = fsm.states[0]
+    trigger = fsm._get_triggers(state)[0]
+    dest = fsm._get_dest_from_trigger(state, trigger)
+    assert dest in fsm.states or dest is None
+
+# Test getting all transitions from a state
+def test_get_transitions():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    state = fsm.states[0]
+    transitions = fsm._get_transitions(source=state)
+    assert isinstance(transitions, list)
+    for transition in transitions:
+        assert "trigger" in transition
+        assert "source" in transition
+        assert "dest" in transition
 
 
 ### tests to do ###
@@ -133,7 +158,7 @@ def test_add_leftover_transitions():
 
 # _find_1_equivalent()
 
-# _get_dest_from_trigger()
+# _get_dest_from_trigger() # DONE
 
 # _get_transitions()
 
