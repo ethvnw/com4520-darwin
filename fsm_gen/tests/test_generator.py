@@ -25,19 +25,14 @@ def test_generate_transitions():
         assert "dest" in transition
         assert transition["source"] in fsm.states
         assert transition["dest"] in fsm.states
+
+# Test the function to check if a state is reachable from another
+def test_is_reachable_from():
+    fsm = FSMGenerator(num_states=4, num_inputs=3)
+    for state in fsm.states:
+        for target in fsm.states:
+            assert fsm._is_reachable_from(state, target) or (state == target)
     
-
-# Test that ensures the FSM is connected
-def test_fsm_connected():
-    fsm = FSMGenerator(num_states=6, num_inputs=4)
-    assert is_connected(fsm)
-
-# Test that there's no duplicate transitions
-def test_no_duplicate_transitions():
-    fsm = FSMGenerator(num_states=6, num_inputs=4)
-    transitions = [(t['source'], t['dest'], t['trigger']) for t in fsm.transitions]
-    assert len(transitions) == len(set(transitions))
-
 # Check if the FSM is connected
 def is_connected(fsm):
     def dfs(start_state):
@@ -58,6 +53,17 @@ def is_connected(fsm):
             return False
         
     return True
+
+# Test that ensures the FSM is connected
+def test_fsm_connected():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    assert is_connected(fsm)
+
+# Test that there's no duplicate transitions
+def test_no_duplicate_transitions():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    transitions = [(t['source'], t['dest'], t['trigger']) for t in fsm.transitions]
+    assert len(transitions) == len(set(transitions))
 
 
 # Test if the FSM is deterministic
@@ -87,8 +93,19 @@ def test_fsm_minimal():
     assert is_deterministic(fsm)
     assert len(fsm.states) <= initial_state_count
 
-# Test 
+# Test getting triggers from a state
+def test_get_triggers():
+    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    state = fsm.states[0]
+    triggers = fsm._get_triggers(state)
+    assert isinstance(triggers, list)
 
+# Test adding tranaitions that are missing to make the FSM complete
+def test_add_leftover_transitions():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    initial_transitions = len(fsm.transitions)
+    fsm._add_leftover_transitions()
+    assert len(fsm.transitions) >= initial_transitions
 
 
 
@@ -102,15 +119,15 @@ def test_fsm_minimal():
 
 ## all generator functions ## 
 
-# try_generate_connected_machine()
+# try_generate_connected_machine() # DONE i guess
 
-# generate_transitions()
+# generate_transitions() # DONE
 
-# is_reachable_from()
+# is_reachable_from() # DONE
 
-# _get_triggers()
+# _get_triggers() # DONE
 
-# _add_leftover_transitions()
+# _add_leftover_transitions() # DONE
 
 # ensure_connected_machine()
 
