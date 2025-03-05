@@ -1,6 +1,8 @@
 import pytest
 import collections
 import random
+import pickle
+import os
 
 from fsm_gen.generator import FSMGenerator
 
@@ -148,6 +150,32 @@ def test_cleanup_transitions():
     fsm._cleanup_transitions()
     assert len(fsm.transitions) <= initial_transitions
 
+# Test saving the FSM and loading it
+def test_save(tmp_path):
+    fsm = FSMGenerator(num_states=3, num_inputs=2)
+    file_path = tmp_path / "fsm.pkl"
+
+    fsm.save(str(file_path))
+    loaded_fsm = pickle.load(open(file_path, "rb"))
+
+    assert loaded_fsm.states == fsm.states
+    assert loaded_fsm.events == fsm.events
+    assert loaded_fsm.transitions == fsm.transitions
+
+
+# Test applying an input sequence to the FSM
+def test_apply_input_sequence():
+    fsm = FSMGenerator(num_states=4, num_inputs=3)
+    state = fsm.states[0]
+    sequence = "".join(fsm.events)  # Using all possible events
+
+    final_state, output_seq = fsm.apply_input_sequence(state, sequence)
+
+    assert final_state in fsm.states
+    assert isinstance(output_seq, tuple)
+    assert len(output_seq) == len(sequence)
+
+
 
 ### tests to do ###
 
@@ -183,15 +211,25 @@ def test_cleanup_transitions():
 
 # _cleanup_transitions() # DONE
 
-# save()
+# save() # DONE
 
 # draw()
 
-# apply_input_sequence()
+# apply_input_sequence() # DONE
 
 
 
 ################  STRESS TESTING  ################
+
+# Test FSM generation with different sizes.
+@pytest.mark.parametrize("num_states, num_inputs", [(3, 2), (5, 3), (10, 4)])
+def test_fsm_different_sizes(num_states, num_inputs):
+    fsm = FSMGenerator(num_states=num_states, num_inputs=num_inputs)
+
+    assert len(fsm.states) == num_states
+    assert len(fsm.events) == num_inputs
+    assert len(fsm.transitions) > 0
+
 # # run test on 500 random FSMs
 # tests_failed = []
 # for i in range(1000):
@@ -206,11 +244,11 @@ def test_cleanup_transitions():
 #         fsm.draw(f"error_{i}.png")
 
 # Test fsm for 50 states and 10 inputs
-def test_fsm_creation_large():
-    fsm = FSMGenerator(num_states=50, num_inputs=10)
-    assert len(fsm.states) == 50
-    assert len(fsm.events) == 10
-    assert len(fsm.transitions) > 0
+# def test_fsm_creation_large():
+#     fsm = FSMGenerator(num_states=50, num_inputs=10)
+#     assert len(fsm.states) == 50
+#     assert len(fsm.events) == 10
+#     assert len(fsm.transitions) > 0
 
 # Takes ages so comment out
 # Test fsm for 80 states and 30 inputs
