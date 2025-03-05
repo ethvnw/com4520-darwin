@@ -10,7 +10,7 @@ def test_fsm_creation():
     fsm = FSMGenerator(num_states=4, num_inputs=3)
     assert len(fsm.states) == 4
     assert len(fsm.events) == 3
-    assert len(fsm.transitions) > 0
+    assert len(fsm.transitions) == len(fsm.states) * len(fsm.events) # each state has a transition for each event
     assert fsm.states[0] == "S0"
 
 # Test that transitions are generated correctly
@@ -133,6 +133,21 @@ def test_get_transitions():
         assert "source" in transition
         assert "dest" in transition
 
+# Test finding equivalent states
+def test_find_equivalent_states():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    equivalent_states = fsm._find_equivalent_states()
+    assert isinstance(equivalent_states, list)
+    for eqviv_set in equivalent_states:
+        assert isinstance(eqviv_set, set)
+
+# Test removing duplicate transitions
+def test_cleanup_transitions():
+    fsm = FSMGenerator(num_states=6, num_inputs=4)
+    initial_transitions = len(fsm.transitions)
+    fsm._cleanup_transitions()
+    assert len(fsm.transitions) <= initial_transitions
+
 
 ### tests to do ###
 
@@ -156,17 +171,17 @@ def test_get_transitions():
 
 # ensure_connected_machine()
 
-# _find_1_equivalent()
+# _find_1_equivalent() # DONE
 
 # _get_dest_from_trigger() # DONE
 
-# _get_transitions()
+# _get_transitions() # DONE
 
-# _find_equivalent_states()
+# _find_equivalent_states() # DONE
 
-# _make_minimal()
+# _make_minimal() # DONE
 
-# _cleanup_transitions()
+# _cleanup_transitions() # DONE
 
 # save()
 
