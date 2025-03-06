@@ -2,6 +2,7 @@ import pickle
 import random
 from pathlib import Path
 
+
 from fsm_gen.machine import Machine
 
 

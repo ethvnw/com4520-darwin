@@ -6,14 +6,54 @@ import os
 
 from fsm_gen.generator import FSMGenerator
 
+@pytest.fixture
+def fsm():
+    return FSMGenerator(num_states=6, num_inputs=4)
 
 # Test that the generator creates a FSM and its states and transition numbers are correct
-def test_fsm_creation():
-    fsm = FSMGenerator(num_states=4, num_inputs=3)
-    assert len(fsm.states) == 4
-    assert len(fsm.events) == 3
+def test_fsm_creation(fsm):
+    #fsm = FSMGenerator(num_states=4, num_inputs=3)
+    assert len(fsm.states) == 6
+    assert len(fsm.events) == 4
     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events) # each state has a transition for each event
     assert fsm.states[0] == "S0"
+
+def test_fsm_zero_states():
+    """ Test that the generator raises an error if the number of states is zero """
+    with pytest.raises(IndexError):
+        FSMGenerator(num_states=0, num_inputs=3)
+
+def test_fsm_zero_inputs():
+    """ Test that the generator raises an error if the number of inputs is zero """
+    with pytest.raises(ValueError):
+        FSMGenerator(num_states=4, num_inputs=0)
+
+def test_fsm_negative_states():
+    """ Test that the generator raises an error if the number of states is negative """
+    with pytest.raises(IndexError):
+        FSMGenerator(num_states=-1, num_inputs=3)
+
+def test_fsm_negative_inputs():
+    """ Test that the generator raises an error if the number of inputs is negative """
+    with pytest.raises(ValueError):
+        FSMGenerator(num_states=4, num_inputs=-1)
+
+def test_fsm_single_state():
+    """ Test that the generator creates a FSM with a single state """
+    fsm = FSMGenerator(num_states=1, num_inputs=3)
+    assert len(fsm.states) == 1
+    assert len(fsm.events) == 3
+    assert len(fsm.transitions) == len(fsm.states) * len(fsm.events)
+    assert fsm.states[0] == "S0"
+
+# def test_fsm_single_input():
+#     """ Test that the generator creates a FSM with a single input """
+#     fsm = FSMGenerator(num_states=2, num_inputs=1)
+#     assert len(fsm.states) == 2
+#     assert len(fsm.events) == 1
+#     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events)
+#     assert fsm.events[0] == "A"
+    
 
 # Test that transitions are generated correctly
 def test_generate_transitions():
