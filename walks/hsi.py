@@ -1,6 +1,6 @@
-from itertools import product
+from itertools import product 
 
-from fsm_gen.generator import FSMGenerator
+from fsm_gen.generator import FSMGenerator 
 
 
 class HSI:

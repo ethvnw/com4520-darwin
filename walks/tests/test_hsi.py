@@ -25,22 +25,26 @@ def test_find_shortest_path(hsi):
 
 def test_generate_state_cover(hsi):
     """ Ensure a valid dict is returned """
+    state_cover = hsi._generate_state_cover()
+    assert isinstance(state_cover, dict) # the state cover should be a dict
+    assert len(state_cover) > 0 # the state cover should not be empty
+    for path in state_cover.values():
+        assert isinstance(path, list) # all values should be lists
+        assert all(isinstance(event, str) for event in path)  # all elements should be strings
 
 
 def test_generate_transition_cover(hsi):
     """ Ensure a valid non-empty set is returned """
+    transition_cover = hsi._generate_transition_cover()
+    assert isinstance(transition_cover, set) # the transition cover should be a set
+    assert len(transition_cover) > 0 # the transition cover should not be empty
+    assert all(isinstance(seq, str) for seq in transition_cover) # all elements should be strings
 
 
 def test_compute_w_set(hsi):
     """ Checks if the W set differentiates states  """
 
 
-def test_compute_w_set_empty(hsi):
-    """ Checks if the W set is empty for a FSM with no transitions """
-
-
-def test_compute_w_set_no_states(hsi):
-    """ Checks if the W set is empty for a FSM with no states """
 
 
 def test_compute_hsi_sets(hsi):
