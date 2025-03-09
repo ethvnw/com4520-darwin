@@ -42,10 +42,23 @@ def test_generate_transition_cover(hsi):
 
 
 def test_compute_w_set(hsi):
-    """ Checks if the W set differentiates states  """
-
+    """ Checks if the W set is formatted correctly  """
+    w_set = hsi.compute_w_set()
+    assert isinstance(w_set, dict) # the W set should be a dict
+    assert len(w_set) > 0 # the W set should not be empty
+    assert set(w_set.keys()).issubset(hsi.fsm.states) # the keys should be states
+    for path in w_set.values():
+        assert isinstance(path, set) 
+        assert all(isinstance(event, str) for event in path) # all elements should be strings
 
 
 
 def test_compute_hsi_sets(hsi):
-    """ Checks if the HSI sets are computed correctly """
+    """ Checks if the HSI sets are fomatted correctly correctly """
+    hsi_sets = hsi.compute_hsi_sets()
+    assert isinstance(hsi_sets, dict) # the HSI sets should be a dict
+    assert len(hsi_sets) > 0 # the HSI sets should not be empty
+    assert set(hsi_sets.keys()).issubset(hsi.fsm.states) # the keys should be states
+    for path in hsi_sets.values():
+        assert isinstance(path, set) 
+        assert all(isinstance(event, str) for event in path) # all elements should be strings

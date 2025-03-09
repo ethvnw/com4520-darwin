@@ -5,7 +5,7 @@ from fsm_gen.machine import Machine
 
 
 class RandomWalk:
-    class WalkType(Enum):
+    class WalkType(Enum): 
         RANDOM = 0
         GREEDY = 1
         CLOSEST_FIRST = 2
