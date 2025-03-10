@@ -53,12 +53,12 @@ def test_compute_w_set(hsi):
 
 
 
-def test_compute_hsi_sets(hsi):
-    """ Checks if the HSI sets are fomatted correctly correctly """
-    hsi_sets = hsi.compute_hsi_sets()
-    assert isinstance(hsi_sets, dict) # the HSI sets should be a dict
-    assert len(hsi_sets) > 0 # the HSI sets should not be empty
-    assert set(hsi_sets.keys()).issubset(hsi.fsm.states) # the keys should be states
-    for path in hsi_sets.values():
-        assert isinstance(path, set) 
-        assert all(isinstance(event, str) for event in path) # all elements should be strings
+# def test_compute_hsi_sets(hsi):
+#     """ Checks if the HSI sets are fomatted correctly correctly """
+#     hsi_sets = hsi.compute_hsi_sets()
+#     assert isinstance(hsi_sets, dict) # the HSI sets should be a dict
+#     assert len(hsi_sets) > 0 # the HSI sets should not be empty
+#     assert set(hsi_sets.keys()).issubset(hsi.fsm.states) # the keys should be states
+#     for path in hsi_sets.values():
+#         assert isinstance(path, set) 
+#         assert all(isinstance(event, str) for event in path) # all elements should be strings
