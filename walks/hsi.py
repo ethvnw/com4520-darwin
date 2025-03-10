@@ -93,35 +93,60 @@ class HSI:
 
         return W
     
-    
-    # TODO: Fix this method
-    def compute_hsi_sets(self) -> dict:
+
+    # def compute_h_sets(self) -> dict:
+    #     """
+    #     Compute the H set (separating family) for the FSM using the W set.
+        
+    #     Returns:
+    #         dict: The H set for the FSM, where each state maps to a minimal set of distinguishing sequences.
+    #     """
+    #     W = self.compute_w_set()
+    #     H = {state: set() for state in self.fsm.states}
+        
+    #     # Step 3: Optimize H by only keeping **minimal necessary prefixes**
+    #     for state, sequences in W.items():
+    #         minimal_sequences = set()
+            
+    #         for seq in sorted(sequences, key=len):
+    #             # Check if any prefix of `seq` is already in minimal_sequences
+    #             if not any(seq.startswith(existing) for existing in minimal_sequences):
+    #                 minimal_sequences.add(seq)
+
+    #         H[state] = minimal_sequences
+
+    #     return H
+
+
+    def compute_h_sets(self) -> dict:
         """
-        Compute the HSI sets for the FSM.
+        Compute the H set (separating family) for the FSM, ensuring that for each pair of states, 
+        there exist sequences with a common prefix that lead to different outputs.
         
         Returns:
-            dict: the HSI sets for the FSM
+            dict: The H set for the FSM, mapping each state to a minimal set of distinguishing sequences.
         """
         W = self.compute_w_set()
-        HSI_sets = {state: set() for state in self.fsm.states}  # Initialize empty HSI sets
+        H = {state: set() for state in self.fsm.states}
+        
+        # Find minimal necessary prefixes and ensure the common prefix condition
+        for s1, s2 in [(s1, s2) for i, s1 in enumerate(self.fsm.states) for s2 in self.fsm.states[i+1:]]:
+            minimal_prefixes = set()
+            
+            for seq1 in sorted(W[s1], key=len):  # Prioritising shorter sequences
+                for seq2 in sorted(W[s2], key=len):
+                    common_prefix = next((seq1[:k] for k in range(1, min(len(seq1), len(seq2)) + 1) if seq1[:k] == seq2[:k]), None)
+                    
+                    if common_prefix:
+                        _, output1 = self.fsm.apply_input_sequence(s1, common_prefix)
+                        _, output2 = self.fsm.apply_input_sequence(s2, common_prefix)
+                        
+                        if output1 != output2:  # Ensure the prefix causes a different output
+                            minimal_prefixes.add(common_prefix)
+                            break  
+            
+            # Assign the minimal set to both states
+            H[s1] |= minimal_prefixes
+            H[s2] |= minimal_prefixes
 
-        # Step 1: Identify harmonized sequences from W
-        for state in self.fsm.states:
-            # W set sequences that distinguish this state
-            hsi_candidates = W.get(state, set())
-
-            # Step 2: Ensure that the selected sequences differentiate all states
-            for seq in hsi_candidates:
-                for i in range(1, len(seq) + 1):
-                    prefix = seq[:i]
-                    unique_outputs = set()
-                    for s in self.fsm.states:
-                        _, output = self.fsm.apply_input_sequence(s, prefix)
-                        unique_outputs.add(output)
-
-                    # If the prefix creates different outputs for at least one state, use it
-                    if len(unique_outputs) > 1:
-                        HSI_sets[state].add(prefix)
-                        break  # No need to check longer prefixes
-
-        return HSI_sets
+        return H
