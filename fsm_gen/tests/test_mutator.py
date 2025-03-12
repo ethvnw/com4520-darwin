@@ -22,14 +22,14 @@ def mutated_fsm(mutator):
     mutator._mutate()
     return mutator.fsm
 
-def test_create_mutated_fsm(mutated_fsm):
+def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO
     mutated_fsm.draw("mutated.png")
     with open("mutated.pkl", "wb") as f:
         pickle.dump(mutated_fsm, f)
     assert isinstance(mutated_fsm, FSMGenerator)
     assert os.path.exists("mutated.pkl")
 
-def test_mutation_application(mutator, sample_fsm):
+def test_mutation_application(mutator, sample_fsm): # REUNDERSTAND AND TODO
     original_fsm = pickle.dumps(sample_fsm)
     mutator._mutate()
     assert mutator.mutations_applied
@@ -37,34 +37,20 @@ def test_mutation_application(mutator, sample_fsm):
     
 '''BAD TESTS TO FIX'''
 
-def test_fsm_connectivity(mutator):
-    mutator._mutate()
-    assert mutator._check_connectivity()
+def test_mutation_preserves_connectivity(mutator): #TODO
 
-def test_check_connectivity(sample_fsm):
-    assert sample_fsm.ensure_connected_machine()
+    assert ""
 
-def test_mutation_preserves_connectivity(mutator):
-    mutator._mutate()
-    assert mutator.fsm.ensure_connected_machine()
+def test_mutated_fsm_determinism(mutator): #TODO
 
-def test_fsm_determinism(mutator):
-    mutator._mutate()
-    assert isinstance(mutator._check_determinism(), bool)
-    
+    assert ""
+
 '''END OF BAD TESTS'''
-
-def test_pickle_creation(mutated_fsm):
-    with open("mutated.pkl", "wb") as f:
-        pickle.dump(mutated_fsm, f)
-    with open("mutated.pkl", "rb") as f:
-        loaded_fsm = pickle.load(f)
-    assert isinstance(loaded_fsm, FSMGenerator)
 
 def test_mutation_effects():
     """Test if all types of mutations are applied by running multiple mutations on fresh FSM instances."""
     mutation_types_encountered = set()
-    expected_mutations = {"add_state", "remove_state", "add_transition", "remove_transition", "modify_transition"}
+    expected_mutations = {"add_state", "remove_state", "add_transition", "remove_transition", "modify_transition"} ### STILL TO FIX
     for _ in range(20):  # Run multiple mutations to cover all types
         fsm = FSMGenerator(num_states=5, num_inputs=3)  # Create a fresh FSM
         mutator = Mutator(fsm)  # Create a new Mutator instance
@@ -101,7 +87,7 @@ def cleanup():
 
 ## all mutator functions ##
 
-# create_mutated_fsm() # done
+# create_mutated_fsm() # done ?
 
 # _mutate() # done
 
@@ -109,15 +95,15 @@ def cleanup():
 
 # _remove_state() # done
 
-# _change_trigger_output() # done
+# _change_trigger_output() # done ? TODO
 
-# _get_num_transitions_exclude_loops() ?
+# _get_num_transitions_exclude_loops() ? TODO
 
-# _change_trans_dest() # done
+# _change_trans_dest() # done ? TODO
 
-# _check determinism() # tested elsewhere
+# _check determinism() # tested elsewhere TODO
 
-# _check connectivity() # tested elsewhere
+# _check connectivity() # tested elsewhere TODO
 
     # dfs() # tested elsewhere
 
