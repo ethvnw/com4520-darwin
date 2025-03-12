@@ -94,30 +94,6 @@ class HSI:
         return W
     
 
-    # def compute_h_sets(self) -> dict:
-    #     """
-    #     Compute the H set (separating family) for the FSM using the W set.
-        
-    #     Returns:
-    #         dict: The H set for the FSM, where each state maps to a minimal set of distinguishing sequences.
-    #     """
-    #     W = self.compute_w_set()
-    #     H = {state: set() for state in self.fsm.states}
-        
-    #     # Step 3: Optimize H by only keeping **minimal necessary prefixes**
-    #     for state, sequences in W.items():
-    #         minimal_sequences = set()
-            
-    #         for seq in sorted(sequences, key=len):
-    #             # Check if any prefix of `seq` is already in minimal_sequences
-    #             if not any(seq.startswith(existing) for existing in minimal_sequences):
-    #                 minimal_sequences.add(seq)
-
-    #         H[state] = minimal_sequences
-
-    #     return H
-
-
     def compute_h_sets(self) -> dict:
         """
         Compute the H set (separating family) for the FSM, ensuring that for each pair of states, 
@@ -150,3 +126,23 @@ class HSI:
             H[s2] |= minimal_prefixes
 
         return H
+
+
+    def generate_HSI_suite(self) -> dict:
+        """
+        Generate the HSI suite for the FSM, which is the transition cover appended with the H set.
+        
+        Returns:
+            dict: the HSI suite for the FSM
+        """
+        test_suite = {}
+        H_sets = self.compute_h_sets()
+        transition_cover = self._generate_transition_cover()
+
+        for inp in transition_cover:
+            state, _ = self.fsm.apply_input_sequence(self.fsm.states[0], inp)
+
+            for seq in H_sets[state]:
+                test_suite[inp + seq] = self.fsm.apply_input_sequence(self.fsm.states[0], inp + seq)[1]
+
+        return test_suite
