@@ -34,6 +34,8 @@ def test_mutation_application(mutator, sample_fsm):
     mutator._mutate()
     assert mutator.mutations_applied
     assert pickle.dumps(mutator.fsm) != original_fsm
+    
+'''BAD TESTS TO FIX'''
 
 def test_fsm_connectivity(mutator):
     mutator._mutate()
@@ -49,6 +51,8 @@ def test_mutation_preserves_connectivity(mutator):
 def test_fsm_determinism(mutator):
     mutator._mutate()
     assert isinstance(mutator._check_determinism(), bool)
+    
+'''END OF BAD TESTS'''
 
 def test_pickle_creation(mutated_fsm):
     with open("mutated.pkl", "wb") as f:
