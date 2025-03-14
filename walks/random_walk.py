@@ -8,7 +8,7 @@ class RandomWalk:
     class WalkType(Enum): 
         RANDOM = 0
         RANDOM_WITH_RESET = 1
-        PROGRESSIVE = 2
+        LIMITED_SELF_LOOP = 2
         STATISTICAL = 3
 
     

@@ -167,7 +167,8 @@ class Mutator:
         Alter the output of a random transition to an opposite value (0 -> 1, 1 -> 0).
         """
         transition = random.choice(self.fsm.transitions)
-
+        while f"Changed trigger output of transition {transition}" in self.mutations_applied:
+            transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(' / ')
         transition["trigger"] = f'{transition_trigger[0]} / {1 - int(transition_trigger[1])}'
 
