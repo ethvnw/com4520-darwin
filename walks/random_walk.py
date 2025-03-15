@@ -25,7 +25,44 @@ class RandomWalk:
             result = self.random_walk()
         elif walk_type == self.WalkType.RANDOM_WITH_RESET:
             result = self.random_walk_with_reset(5)
+        elif walk_type == self.WalkType.LIMITED_SELF_LOOP:
+            result = self.limited_self_loop_walk()
         return result
+    
+
+    def limited_self_loop_walk(self) -> int:
+        transitions_executed = set()
+        coverage = 0
+        state = self.fsm.machine.initial
+        walk = []
+        self_loop_triggers = []
+
+        while coverage < self.target_coverage:
+            triggers = self.fsm._get_triggers(state)
+
+            # Limit triggers to those that are not already explored self-loops
+            triggers_excluding_self_loops = [t for t in triggers if [state, t] not in self_loop_triggers]
+            if len(triggers_excluding_self_loops) != 0:
+                trigger = random.choice(triggers_excluding_self_loops)
+            # Fallback incase only option is to self-loop (theoretically impossible in connected machine)
+            else:
+                trigger = random.choice(triggers)
+            previous_state = self.fsm.machine.state
+
+            self.fsm.machine.trigger(trigger)
+            transitions_executed.add(f"{state}->{trigger}")
+            walk.append(f"{state}->{trigger}")
+
+            state = self.fsm.machine.state
+            current_state = self.fsm.machine.state
+
+            # Record presence of a self-loop and the trigger it is associated with
+            if previous_state == current_state and [state, trigger] not in self_loop_triggers:
+                self_loop_triggers.append([state, trigger])
+
+            coverage = len(transitions_executed) / self.transitions_length * 100
+
+        return len(walk)
 
 
     def random_walk_with_reset(self, step_limit: int) -> int:
