@@ -27,8 +27,36 @@ class RandomWalk:
             result = self.random_walk_with_reset(5)
         elif walk_type == self.WalkType.LIMITED_SELF_LOOP:
             result = self.limited_self_loop_walk()
+        elif walk_type == self.WalkType.STATISTICAL:
+            result = self.statistical_walk()
         return result
     
+
+    def statistical_walk(self) -> int:
+        transitions_executed = set()
+        coverage = 0
+        state = self.fsm.machine.initial
+        walk = []
+
+        input_probabilities = []
+        probabilities = [random.random() for i in range(0, len(self.fsm.events))]
+        summed_probabilities = sum(probabilities)
+        for i in range(0, len(probabilities)):
+            input_probabilities.append(probabilities[i] / summed_probabilities)
+
+        while coverage < self.target_coverage:
+            triggers = self.fsm._get_triggers(state)
+            trigger = random.choices(triggers, input_probabilities, k=1)[0]
+
+            self.fsm.machine.trigger(trigger)
+            transitions_executed.add(f"{state}->{trigger}")
+            walk.append(f"{state}->{trigger}")
+
+            state = self.fsm.machine.state
+            coverage = len(transitions_executed) / self.transitions_length * 100
+
+        return len(walk)
+
 
     def limited_self_loop_walk(self) -> int:
         transitions_executed = set()
