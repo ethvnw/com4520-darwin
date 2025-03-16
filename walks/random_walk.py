@@ -88,8 +88,9 @@ class RandomWalk:
                 outputs = ()
                 for pair in walk_since_reset[:len(input_seq)]:
                     io = pair.split("->")[1].split(" / ")
-                    key += str(io[0])
-                    outputs += (io[1],)
+                    if len(io) == 2:
+                        key += str(io[0])
+                        outputs += (io[1],)
                 io_sequence[key] = outputs
 
                 if key in self.HSI_suite.keys() and io_sequence[key] == self.HSI_suite[input_seq]:
