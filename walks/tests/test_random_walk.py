@@ -80,29 +80,37 @@ def test_random_walk_reset(simple_fsm, sample_hsi_suite):
     # make sure walk continues after until coverage reached
     assert steps >= (len(simple_fsm.transitions))
 
+def test_random_walk_reaches_target_coverage(simple_fsm, sample_hsi_suite):
+    """ Test that the walk reaches the target coverage """
+    target_coverage = 100
+    walk = RandomWalk(simple_fsm, target_coverage=target_coverage, HSI_suite=sample_hsi_suite)
+    steps = walk.random_walk()
+    # Assert the coverage has reached the target
+    assert steps > 0, "Walk should take at least one step"
+    # Extract the actual state transitions called
+    triggered_states = [call.args[0] for call in simple_fsm._get_triggers.mock_calls]
+    # Ensure the FSM achieves full coverage
+    assert len(set(triggered_states)) == len(simple_fsm.transitions) -1  
 
-# @pytest.fixture
-# def blocked_fsm():
-#     """ A FSM with a state with no outgoing transitions """
-#     states = ["S0", "S1", "S2"]
-#     triggers = ["A", "B", "C"]
-#     transitions = [
-#         {"source": "S0", "trigger": "A", "dest": "S1"},
-#         {"source": "S1", "trigger": "B", "dest": "S2"},
-#     ]
-#     return Machine(states=states, initial="S0", transitions=transitions)
+def test_random_reset_walk_doesnt_walk_with_no_coverage(simple_fsm, sample_hsi_suite):
+    """ Tests that the walk doesnt walk if target coverage is 0 """
+    walk = RandomWalk(simple_fsm, target_coverage=0, HSI_suite=sample_hsi_suite)
+    walk_length = walk.random_walk_with_reset(5)
+    assert walk_length == 0
+
+def test_random_walk_with_empty_triggers():
+    mock_fsm = MagicMock(spec=FSMGenerator)
+    mock_fsm.machine = MagicMock()
+    mock_fsm.initial = 'S0'
+    mock_fsm.state = 'S0'
+    mock_fsm.transitions = []
+    mock_fsm._get_triggers = MagicMock(return_value=[])
+    walk = RandomWalk(mock_fsm, target_coverage=100, HSI_suite={})
+    with pytest.raises(IndexError):
+        walk.random_walk()
 
 
-# ### TESTS ###
-
-
-
-# def test_blocked_random_walk(blocked_fsm):
-#     """ Test a random walk with a FSM with a blocked state """
-#     rand_walk = RandomWalk(blocked_fsm, RandomWalk.WalkType.RANDOM, 100)
-#     walk_length = rand_walk.walk()
-#     assert walk_length > 0
-#     assert walk_length < 100 # Should not be too long/ no infinite loop
+## old tests below, need to adjust them
 
 # ### THIS MAKES THE THING GO INTO AN INFINITE LOOP ###
 # ### CHNAGE CODE SO CANT DO GOAL THAT IS IMPOSSIBLE ###
