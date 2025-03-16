@@ -230,46 +230,47 @@ class FSMGenerator:
         """
         previous_equivalence_dict = self._find_1_equivalent()
 
-        while True:
-            current_equivalence_dict = dict()
+        # Check for if every transition is 1-equivalent for every state in the FSM
+        if len(previous_equivalence_dict) != 1:
+            while True:
+                current_equivalence_dict = dict()
 
-            for key, eq_set in previous_equivalence_dict.items():
-                for state in eq_set:
-                    triggers = self._get_triggers(state)
-                    subset_pointer = key
+                for key, eq_set in previous_equivalence_dict.items():
+                    for state in eq_set:
+                        triggers = self._get_triggers(state)
+                        subset_pointer = key
 
-                    for trigger in triggers:
-                        trigger_input = trigger.split(" / ")[0]
-                        trigger_output = trigger.split(" / ")[1]
-                        subset_pointer += trigger_input
-                        subset_pointer += trigger_output
+                        for trigger in triggers:
+                            trigger_input = trigger.split(" / ")[0]
+                            trigger_output = trigger.split(" / ")[1]
+                            subset_pointer += trigger_input
+                            subset_pointer += trigger_output
 
-                        dest = self._get_dest_from_trigger(state, trigger)
+                            dest = self._get_dest_from_trigger(state, trigger)
 
-                        for key, eq_set in previous_equivalence_dict.items():
-                            if dest in eq_set:
-                                subset_pointer += f"{key},"
-                                break
+                            for key, eq_set in previous_equivalence_dict.items():
+                                if dest in eq_set:
+                                    subset_pointer += f"{key},"
+                                    break
 
-                    subset_pointer_list = subset_pointer.split(",")
-                    subset_pointer_list.sort()
-                    subset_pointer = "".join(subset_pointer_list)
+                        subset_pointer_list = subset_pointer.split(",")
+                        subset_pointer_list.sort()
+                        subset_pointer = "".join(subset_pointer_list)
 
-                    if subset_pointer not in current_equivalence_dict.keys():
-                        current_equivalence_dict[subset_pointer] = set()
-                
-                    current_equivalence_dict[subset_pointer].add(state)
-                                                
-            if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
-                break
+                        if subset_pointer not in current_equivalence_dict.keys():
+                            current_equivalence_dict[subset_pointer] = set()
+                    
+                        current_equivalence_dict[subset_pointer].add(state)
+                                                    
+                if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
+                    break
 
-            previous_equivalence_dict = current_equivalence_dict
+                previous_equivalence_dict = current_equivalence_dict
 
         equivalent_states = []
         for eq_set in previous_equivalence_dict.values():
             if len(eq_set) > 1:
                 equivalent_states.append(eq_set)
-
 
         return equivalent_states
 
