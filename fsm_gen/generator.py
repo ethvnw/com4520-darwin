@@ -2,12 +2,20 @@ import pickle
 import random
 from pathlib import Path
 
-
 from fsm_gen.machine import Machine
 
-
-class FSMGenerator: 
+"""
+A class to generate a FSM satisfying specific realistic properties.
+"""
+class FSMGenerator:
     def __init__(self, num_states: int, num_inputs: int) -> None:
+        """
+        Create a finite state machine with a given number of states and inputs.
+
+        Args:
+            num_states (int): the number of inputs that can be attempted at any state.
+            num_inputs (int): the number of states that are in the FSM.
+        """
         self.states = [f"S{i}" for i in range(num_states)]
         self.events = [f"{chr(i + 65)}" for i in range(num_inputs)]
 
@@ -22,7 +30,7 @@ class FSMGenerator:
 
         while not connected:
             self.transitions = self._generate_transitions()        
-            connected = self.ensure_connected_machine()
+            connected = self._ensure_connected_machine()
 
         self._add_leftover_transitions()
         self._make_minimal()
@@ -120,7 +128,7 @@ class FSMGenerator:
                 })
         
 
-    def ensure_connected_machine(self) -> bool:
+    def _ensure_connected_machine(self) -> bool:
         """
         Ensure that all states are reachable from any other state.
 

@@ -6,11 +6,19 @@ import random
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.machine import Machine
 
-
+"""
+A class to apply different types of mutations to a given FSM.
+"""
 class Mutator:
     MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
 
     def __init__(self, fsm: FSMGenerator) -> None:
+        """
+        Create a mutator instance for a given FSM.
+
+        Args:
+            fsm (FSMGenerator): the (unmutated) FSM to apply mutations to.
+        """
         self.fsm = fsm
         self.num_mutations = int(0.4 * len(self.fsm.states))
         self.mutations_applied = []

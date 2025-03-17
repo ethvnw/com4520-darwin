@@ -2,10 +2,17 @@ from itertools import product
 
 from fsm_gen.generator import FSMGenerator 
 
-
+"""
+A class with the capability for computation of H-sets, W-sets and HSI suites.
+"""
 class HSI:
-
     def __init__(self, fsm: FSMGenerator):
+        """
+        Create a HSI instance that computes the HSI suite for a given (unmutated) FSM.
+
+        Args:
+            fsm (FSMGenerator): the given FSM to compute the HSI suite for.
+        """
         self.fsm = fsm
 
 

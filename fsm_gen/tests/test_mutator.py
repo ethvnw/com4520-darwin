@@ -40,11 +40,11 @@ def test_fsm_connectivity(mutator):
     assert mutator._check_connectivity()
 
 def test_check_connectivity(sample_fsm):
-    assert sample_fsm.ensure_connected_machine()
+    assert sample_fsm._ensure_connected_machine()
 
 def test_mutation_preserves_connectivity(mutator):
     mutator._mutate()
-    assert mutator.fsm.ensure_connected_machine()
+    assert mutator.fsm._ensure_connected_machine()
 
 def test_fsm_determinism(mutator):
     mutator._mutate()

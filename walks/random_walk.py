@@ -3,7 +3,9 @@ from enum import Enum
 
 from fsm_gen.generator import FSMGenerator
 
-
+"""
+A class to perform different types of (often random) walks on a given FSM.
+"""
 class RandomWalk:
     class WalkType(Enum): 
         RANDOM = 0
@@ -13,26 +15,51 @@ class RandomWalk:
 
     
     def __init__(self, fsm: FSMGenerator, target_coverage: int, HSI_suite: dict) -> None:
+        """
+        Create a walker instance for a given FSM and target coverage.
+
+        Args:
+            fsm (FSMGenerator): the (mutated) FSM to perform the walks on.
+            target_coverage (int): the target coverage of transitions to reach during walks.
+            HSI_suite (dict): the HSI suite for the unmutated FSM (ways to distinguish states).
+        """
         self.fsm = fsm
         self.target_coverage = target_coverage
         self.transitions_length = len(fsm.transitions)
         self.HSI_suite = HSI_suite
 
 
-    def walk(self, walk_type) -> int:
+    def walk(self, walk_type: WalkType, step_limit: int = 5) -> int:
+        """
+        Perform a specific type of walk on the FSM and return its length.
+
+        Args:
+            walk_type (WalkType): the type of walk to perform on the FSM.
+            step_limit (int): number of steps away from an identified state before resetting.
+
+        Returns:
+            int: length of the walk performed in order to meet the target coverage.
+        """
         self.fsm.machine.state = self.fsm.machine.initial
         if walk_type == self.WalkType.RANDOM:
-            result = self.random_walk()
+            result = self._random_walk()
         elif walk_type == self.WalkType.RANDOM_WITH_RESET:
-            result = self.random_walk_with_reset(5)
+            result = self._random_walk_with_reset(step_limit)
         elif walk_type == self.WalkType.LIMITED_SELF_LOOP:
-            result = self.limited_self_loop_walk()
+            result = self._limited_self_loop_walk()
         elif walk_type == self.WalkType.STATISTICAL:
-            result = self.statistical_walk()
+            result = self._statistical_walk()
         return result
     
 
-    def statistical_walk(self) -> int:
+    def _statistical_walk(self) -> int:
+        """
+        Navigate a FSM with randomly assigned probability for each input at any 
+        state. Some transitions are more likely to be explored than others.
+
+        Returns:
+            int: length of the walk performed in order to meet the target coverage.
+        """
         transitions_executed = set()
         coverage = 0
         state = self.fsm.machine.initial
@@ -58,7 +85,15 @@ class RandomWalk:
         return len(walk)
 
 
-    def limited_self_loop_walk(self) -> int:
+    def _limited_self_loop_walk(self) -> int:
+        """
+        Navigate a FSM with uniform probability for each trigger at any state.
+        Stores self-loop transitions whenever they are encountered and avoids using them in
+        future in order to aid progression.
+
+        Returns:
+            int: length of the walk performed in order to meet the target coverage.
+        """
         transitions_executed = set()
         coverage = 0
         state = self.fsm.machine.initial
@@ -93,7 +128,18 @@ class RandomWalk:
         return len(walk)
 
 
-    def random_walk_with_reset(self, step_limit: int) -> int:
+    def _random_walk_with_reset(self, step_limit: int) -> int:
+        """
+        Navigate a FSM with uniform probability for each trigger at any state.
+        If a state has not been identified through the HSI set for a certain number of steps, the
+        machine resets to its initial state.
+
+        Args:
+            step_limit (int): number of steps away from an identified state before resetting.
+
+        Returns:
+            int: length of the walk performed in order to meet the target coverage.
+        """
         walk = []
         walk_since_reset = []
         steps_since_identification = 0
@@ -138,7 +184,14 @@ class RandomWalk:
         return len(walk)
     
 
-    def random_walk(self) -> int:
+    def _random_walk(self) -> int:
+        """
+        Navigate a FSM with uniform probability for each trigger at any state.
+        The pure random approach.
+
+        Returns:
+            int: length of the walk performed in order to meet the target coverage.
+        """
         transitions_executed = set()
         coverage = 0
         state = self.fsm.machine.initial

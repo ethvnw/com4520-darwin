@@ -51,19 +51,19 @@ def sample_hsi_suite():
 def test_random_walk(simple_fsm, sample_hsi_suite):
     """ Tests that the walk actually walks """
     walk = RandomWalk(simple_fsm, target_coverage=100, HSI_suite=sample_hsi_suite)
-    walk_length = walk.random_walk()
+    walk_length = walk.walk(RandomWalk.WalkType.RANDOM)
     assert walk_length > 0
 
 def test_random_walk_no_coverage(simple_fsm, sample_hsi_suite):
     """ Tests that the walk doesnt walk if target coverage is 0 """
     walk = RandomWalk(simple_fsm, target_coverage=0, HSI_suite=sample_hsi_suite)
-    walk_length = walk.random_walk()
+    walk_length = walk.walk(RandomWalk.WalkType.RANDOM)
     assert walk_length == 0
 
 def test_random_walk_loop(loop_fsm, sample_hsi_suite):
     """ Test that it doesnt get stuck in a loop """
     walk = RandomWalk(loop_fsm, target_coverage=100, HSI_suite=sample_hsi_suite)
-    walk_length = walk.random_walk()
+    walk_length = walk.walk(RandomWalk.WalkType.RANDOM)
     assert walk_length > 0
     assert walk_length < 1000 # Should not be too long/ no infinite loop
 
@@ -73,7 +73,7 @@ def test_random_walk_reset(simple_fsm, sample_hsi_suite):
     walk = RandomWalk(simple_fsm, target_coverage=100, HSI_suite=sample_hsi_suite)
     simple_fsm.machine.state = 'S0'
     simple_fsm._get_triggers.side_effect = [['a'], ['b']]
-    steps = walk.random_walk_with_reset(1)
+    steps = walk.walk(RandomWalk.WalkType.RANDOM_WITH_RESET, 1)
     # ensure that the fsm does at least one step and then resets
     assert steps >= 1
     assert simple_fsm.machine.state == simple_fsm.machine.initial
@@ -84,7 +84,7 @@ def test_random_walk_reaches_target_coverage(simple_fsm, sample_hsi_suite):
     """ Test that the walk reaches the target coverage """
     target_coverage = 100
     walk = RandomWalk(simple_fsm, target_coverage=target_coverage, HSI_suite=sample_hsi_suite)
-    steps = walk.random_walk()
+    steps = walk.walk(RandomWalk.WalkType.RANDOM)
     # Assert the coverage has reached the target
     assert steps > 0, "Walk should take at least one step"
     # Extract the actual state transitions called
@@ -95,7 +95,7 @@ def test_random_walk_reaches_target_coverage(simple_fsm, sample_hsi_suite):
 def test_random_reset_walk_doesnt_walk_with_no_coverage(simple_fsm, sample_hsi_suite):
     """ Tests that the walk doesnt walk if target coverage is 0 """
     walk = RandomWalk(simple_fsm, target_coverage=0, HSI_suite=sample_hsi_suite)
-    walk_length = walk.random_walk_with_reset(5)
+    walk_length = walk.walk(RandomWalk.WalkType.RANDOM_WITH_RESET, 5)
     assert walk_length == 0
 
 def test_random_walk_with_empty_triggers():
@@ -107,7 +107,7 @@ def test_random_walk_with_empty_triggers():
     mock_fsm._get_triggers = MagicMock(return_value=[])
     walk = RandomWalk(mock_fsm, target_coverage=100, HSI_suite={})
     with pytest.raises(IndexError):
-        walk.random_walk()
+        walk.walk(RandomWalk.WalkType.RANDOM)
 
 
 ## old tests below, need to adjust them
