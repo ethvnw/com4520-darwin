@@ -22,14 +22,14 @@ def mutated_fsm(mutator):
     mutator._mutate()
     return mutator.fsm
 
-def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO
+def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO 
     mutated_fsm.draw("mutated.png")
     with open("mutated.pkl", "wb") as f:
         pickle.dump(mutated_fsm, f)
     assert isinstance(mutated_fsm, FSMGenerator)
     assert os.path.exists("mutated.pkl")
 
-def test_mutation_application(mutator, sample_fsm): # REUNDERSTAND AND TODO
+def test_mutation_application(mutator, sample_fsm): # REUNDERSTAND AND TODO # errored roughly once in 100
     original_fsm = pickle.dumps(sample_fsm)
     mutator._mutate()
     assert mutator.mutations_applied
@@ -47,7 +47,7 @@ def test_mutated_fsm_determinism(mutator): #TODO
 
 '''END OF BAD TESTS'''
 
-def test_mutation_effects():
+def test_mutation_effects(): # had 1 error in 1000 test runs
     """Test if all types of mutations are applied by running multiple mutations on fresh FSM instances."""
     mutation_types_encountered = set()
     expected_mutations = {"add_state", "remove_state", "add_transition", "remove_transition", "modify_transition"} ### STILL TO FIX
