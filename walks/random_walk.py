@@ -13,6 +13,9 @@ class RandomWalk:
         LIMITED_SELF_LOOP = 2
         STATISTICAL = 3
 
+        def __str__(self):
+            return "".join(self.name.split("_")).lower()
+
     
     def __init__(self, fsm: FSMGenerator, target_coverage: int, HSI_suite: dict) -> None:
         """
@@ -171,7 +174,6 @@ class RandomWalk:
                     break
                 elif index == len(self.HSI_suite) - 1:
                     steps_since_identification += 1
-                    print ("Steps since identification: " + str(steps_since_identification))
 
             if steps_since_identification >= step_limit:
                 self.fsm.machine.state = self.fsm.machine.initial
