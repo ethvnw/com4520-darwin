@@ -84,6 +84,8 @@ def test_change_trans_dest():
         if found == True:
             break
     assert found
+
+# TODO discuss this
 '''
 def test_mutation_effects(): # had 1 error in 1000 test runs
     """Test if all types of mutations are applied by running multiple mutations on fresh FSM instances."""
@@ -110,6 +112,7 @@ def test_mutation_effects(): # had 1 error in 1000 test runs
             
     assert mutation_types_encountered == expected_mutations, f"Missing mutation types: {expected_mutations - mutation_types_encountered}"
 '''
+
 def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO 
     mutated_fsm.draw("mutated.png")
     with open("mutated.pkl", "wb") as f:
@@ -135,6 +138,7 @@ def test_mutated_fsm_determinism(mutator): #TODO
     
 '''END OF BAD TESTS'''
 
+# TODO Discuss this too
 ''' Confused by how to test this'''
 '''
 def test_get_machine_properties(testing_fsm):
