@@ -1,64 +1,115 @@
 import pytest
 
 from fsm_gen.generator import FSMGenerator
-from walks.hsi import HSI
+from fsm_gen.machine import Machine
+#from walks.hsi import hsi
+
+from walks.hsi import (
+    _find_shortest_path,
+    _generate_state_cover,
+    _generate_transition_cover,
+    _compute_w_set,
+    _compute_h_sets,
+    generate_HSI_suite
+)
 
 @pytest.fixture
 def fsm():
-    """ A FSM for testing """
-    return FSMGenerator(num_states=6, num_inputs=4)
+    """A simple FSM for testing purposes"""
+    fsm = FSMGenerator(num_states=3, num_inputs=2)
+    
+    # Manually override states, events, and transitions
+    fsm.states = ['S0', 'S1', 'S2']
+    fsm.events = ['a', 'b']
+    fsm.transitions = [
+        {'source': 'S0', 'trigger': 'a / x', 'dest': 'S1'},
+        {'source': 'S1', 'trigger': 'b / y', 'dest': 'S2'},
+        {'source': 'S2', 'trigger': 'a / z', 'dest': 'S0'},
+    ]
+    
+    # Ensure the FSM machine instance is recreated with these values
+    fsm.machine = fsm.machine = Machine(
+        states=fsm.states,
+        initial=fsm.states[0],
+        graph_engine='pygraphviz',
+        auto_transitions=False,
+        transitions=fsm.transitions
+    )
 
-@pytest.fixture
-def hsi(fsm):
-    """ A HSI for testing """
-    return HSI(fsm)
-
-def test_find_shortest_path(hsi):
-    """ Ensure a valid list is returned """
-    fsm = hsi.fsm
-    state = fsm.states[-1] # the last state
-    path = hsi._find_shortest_path(state) # the shortest path to the last state
-    assert isinstance(path, list) # the path should be a list
-    assert len(path) > 0 # the path should not be empty
-    assert all(isinstance(event, str) for event in path) # all elements should be strings
+    return fsm
 
 
-def test_generate_state_cover(hsi):
-    """ Ensure a valid dict is returned """
-    state_cover = hsi._generate_state_cover()
+
+### IF ALREADY ON STATE THEN SHORTEST PATH IS EMPTY ####
+### FIX IN CODE ###
+def test_find_shortest_path(fsm):
+    """ Ensure a valid list is returned and the path is correct """
+    # making sure the shortest path is returned
+    assert _find_shortest_path(fsm, 'S2') == ['a', 'b'] 
+    assert _find_shortest_path(fsm, 'S1') == ['a'] 
+    assert _find_shortest_path(fsm, 'S0') == [] 
+    path = _find_shortest_path(fsm, 'S2')
+    # checking structure of path
+    assert isinstance(path, list)
+    assert all(isinstance(event, str) for event in path)
+
+
+def test_generate_state_cover(fsm):
+    """ Ensure a valid structure and state cover is returned """
+    state_cover = _generate_state_cover(fsm)
     assert isinstance(state_cover, dict) # the state cover should be a dict
     assert len(state_cover) > 0 # the state cover should not be empty
     for path in state_cover.values():
         assert isinstance(path, list) # all values should be lists
         assert all(isinstance(event, str) for event in path)  # all elements should be strings
+    # make sure a correct state cover is returned
+    assert state_cover == {
+        'S0': [],
+        'S1': ['a'],
+        'S2': ['a', 'b']
+    }
 
 
-def test_generate_transition_cover(hsi):
+
+def test_generate_transition_cover(fsm):
     """ Ensure a valid non-empty set is returned """
-    transition_cover = hsi._generate_transition_cover()
+    transition_cover = _generate_transition_cover(fsm)
+    # make sure structure is correct
     assert isinstance(transition_cover, set) # the transition cover should be a set
     assert len(transition_cover) > 0 # the transition cover should not be empty
     assert all(isinstance(seq, str) for seq in transition_cover) # all elements should be strings
+    # ensuring the correct transition cover is returned
+    assert transition_cover == {'a', 'ab', 'aba'}
 
 
-def test_compute_w_set(hsi):
-    """ Checks if the W set is formatted correctly  """
-    w_set = hsi.compute_w_set()
+def test_compute_w_set(fsm):
+    """ Checks if the W set is correctly returned  """
+    w_set = _compute_w_set(fsm)
+    # make sure the structure is correct
     assert isinstance(w_set, dict) # the W set should be a dict
-    assert len(w_set) > 0 # the W set should not be empty
-    assert set(w_set.keys()).issubset(hsi.fsm.states) # the keys should be states
+    assert len(w_set) > 0 
+    assert set(w_set.keys()).issubset(fsm.states) 
     for path in w_set.values():
         assert isinstance(path, set) 
         assert all(isinstance(event, str) for event in path) # all elements should be strings
+    assert 'S1' in w_set and 'S2' in w_set
+    assert any(seq in w_set['S1'] for seq in ['a', 'b', 'ab'])
+
+def test_compute_h_sets(fsm):
+    """ Checks if the H sets are correctly returned """
+    h_sets = _compute_h_sets(fsm)
+    # make sure the structure is correct
+    assert isinstance(h_sets, dict) 
+    assert len(h_sets) > 0 
+    assert set(h_sets.keys()).issubset(fsm.states) # states
+    for path in h_sets.values():
+        assert isinstance(path, set) 
+        assert all(isinstance(event, str) for event in path)
 
 
-
-# def test_compute_hsi_sets(hsi):
-#     """ Checks if the HSI sets are fomatted correctly correctly """
-#     hsi_sets = hsi.compute_hsi_sets()
-#     assert isinstance(hsi_sets, dict) # the HSI sets should be a dict
-#     assert len(hsi_sets) > 0 # the HSI sets should not be empty
-#     assert set(hsi_sets.keys()).issubset(hsi.fsm.states) # the keys should be states
-#     for path in hsi_sets.values():
-#         assert isinstance(path, set) 
-#         assert all(isinstance(event, str) for event in path) # all elements should be strings
+def test_generate_hsi_suite(fsm):
+    hsi_suite = generate_HSI_suite(fsm)
+    assert isinstance(hsi_suite, dict)
+    assert len(hsi_suite) > 0
+    for seq, output in hsi_suite.items():
+        assert isinstance(seq, str)

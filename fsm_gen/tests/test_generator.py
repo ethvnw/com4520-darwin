@@ -217,48 +217,6 @@ def test_apply_input_sequence():
 
 
 
-### tests to do ###
-
-## generator ##
-# ensure connectivity # DONE
-# ensure minimalism # DONE 
-# ensure determinism # DONE
-# ensure no duplicate transitions/states # DONE
-
-## all generator functions ## 
-
-# try_generate_connected_machine() # DONE i guess
-
-# generate_transitions() # DONE
-
-# is_reachable_from() # DONE
-
-# _get_triggers() # DONE
-
-# _add_leftover_transitions() # DONE
-
-# ensure_connected_machine()
-
-# _find_1_equivalent() # DONE
-
-# _get_dest_from_trigger() # DONE
-
-# _get_transitions() # DONE
-
-# _find_equivalent_states() # DONE
-
-# _make_minimal() # DONE
-
-# _cleanup_transitions() # DONE
-
-# save() # DONE
-
-# draw()
-
-# apply_input_sequence() # DONE
-
-
-
 ################  STRESS TESTING  ################
 
 # Test FSM generation with different sizes.

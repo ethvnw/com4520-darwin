@@ -25,7 +25,8 @@ def _find_shortest_path(fsm: FSMGenerator, end: str) -> list:
         for transition in transitions:
             inp = transition["trigger"].split(" / ")[0]
             next_state = transition["dest"]
-
+            if state == end:
+                return path
             if next_state == end:
                 return path + [inp]
             else:
