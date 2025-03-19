@@ -55,7 +55,7 @@ def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO
 
 def test_mutation_application(mutator, testing_fsm): #ensures a previously applied mutation is not then mutated back to the original fsm
     original_fsm = pickle.dumps(testing_fsm)
-    mutator._mutate()
+    mutator.create_mutated_fsm()
     assert mutator.mutations_applied
     assert pickle.dumps(mutator.fsm) != original_fsm
     
