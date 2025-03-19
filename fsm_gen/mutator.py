@@ -10,6 +10,7 @@ from fsm_gen.machine import Machine
 A class to apply different types of mutations to a given FSM.
 """
 class Mutator:
+    DEBUG = False
     MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
 
     def __init__(self, fsm: FSMGenerator) -> None:
@@ -66,10 +67,11 @@ class Mutator:
                 self.fsm = original_fsm
                 self._change_trigger_output()
 
-        print("Mutations applied:")
-        for mutation in self.mutations_applied:
-            print(f"\t{mutation}")
-        self.get_machine_properties()
+        if self.DEBUG:
+            print("Mutations applied:")
+            for mutation in self.mutations_applied:
+                print(f"\t{mutation}")
+            self.get_machine_properties()
 
     
     def _add_state(self):

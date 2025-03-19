@@ -5,14 +5,18 @@ from mpi4py import MPI
 from tqdm import tqdm
 
 from fsm_gen.generator import FSMGenerator
+from fsm_gen.mutator import Mutator
 from walks.hsi import generate_HSI_suite
 from walks.random_walk import RandomWalk
 
 
 def run_walk(state_size, input_size, index, percent):
     fsm = FSMGenerator(state_size, input_size)
+    mutator = Mutator(fsm)
     hsi_suite = generate_HSI_suite(fsm)
-    walker = RandomWalk(fsm, percent, hsi_suite)
+    mutated_fsm = mutator.create_mutated_fsm()
+    
+    walker = RandomWalk(mutated_fsm, percent, hsi_suite)
     results = {}
 
     for walk_type in RandomWalk.WalkType:
