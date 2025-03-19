@@ -195,11 +195,13 @@ class FSMGenerator:
         Returns:
             str: The destination state of the transition.
         """
+        
         for transition in self.transitions:
             if transition['source'] == source and transition['trigger'] == trigger:
                 return transition['dest']
             
-        return None
+        #return None
+        raise LookupError(f"No valid transition found for state '{source}' with trigger '{trigger}'")
     
 
     def _get_transitions(self, source: str=None, dest: str=None) -> list:
@@ -345,6 +347,8 @@ class FSMGenerator:
         output_seq = []
 
         for event in sequence:
+            if event not in self.events:
+                raise ValueError(f"Invalid event: '{event}' in sequence.")
             for transition in self.transitions:
                 if transition['source'] == state and transition['trigger'].startswith(event):
                     output_seq.append(transition['trigger'].split(" / ")[1])

@@ -10,13 +10,14 @@ from fsm_gen.generator import FSMGenerator
 def fsm():
     return FSMGenerator(num_states=6, num_inputs=4)
 
-# Test that the generator creates a FSM and its states and transition numbers are correct
+
 def test_fsm_creation(fsm):
-    #fsm = FSMGenerator(num_states=4, num_inputs=3)
+    """ Test that the generator creates a FSM and its states and transition numbers are correct """
     assert len(fsm.states) == 6
     assert len(fsm.events) == 4
     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events) # each state has a transition for each event
     assert fsm.states[0] == "S0"
+    assert all(state.startswith("S") for state in fsm.states)
 
 def test_fsm_zero_states():
     """ Test that the generator raises an error if the number of states is zero """
@@ -46,6 +47,11 @@ def test_fsm_single_state():
     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events)
     assert fsm.states[0] == "S0"
 
+def test_no_reachable_states():
+    fsm = FSMGenerator(num_states=3, num_inputs=3)
+    fsm.transitions = []  # Removing transitions
+    assert not is_connected(fsm)
+
 # def test_fsm_single_input():
 #     """ Test that the generator creates a FSM with a single input """
 #     fsm = FSMGenerator(num_states=2, num_inputs=1)
@@ -56,8 +62,7 @@ def test_fsm_single_state():
     
 
 # Test that transitions are generated correctly
-def test_generate_transitions():
-    fsm = FSMGenerator(num_states=4, num_inputs=3)
+def test_generate_transitions(fsm):
     assert isinstance(fsm.transitions, list)
     assert len(fsm.transitions) > 0
     for transition in fsm.transitions:
@@ -66,6 +71,12 @@ def test_generate_transitions():
         assert "dest" in transition
         assert transition["source"] in fsm.states
         assert transition["dest"] in fsm.states
+    transi = fsm._generate_transitions()
+    #assert len(transi) == len(fsm.states) * len(fsm.events)
+    for trans in transi:
+        assert 'trigger' in trans
+        assert 'source' in trans
+        assert 'dest' in trans
 
 # Test the function to check if a state is reachable from another
 def test_is_reachable_from():
@@ -94,6 +105,10 @@ def is_connected(fsm):
             return False
         
     return True
+
+def test_try_generate_connected_machine(fsm):
+    fsm._try_generate_connected_machine()
+    assert is_connected(fsm)
 
 # Test that ensures the FSM is connected
 def test_fsm_connected():
@@ -140,6 +155,7 @@ def test_get_triggers():
     state = fsm.states[0]
     triggers = fsm._get_triggers(state)
     assert isinstance(triggers, list)
+    assert all(isinstance(trigger, str) for trigger in triggers)
 
 # Test adding tranaitions that are missing to make the FSM complete
 def test_add_leftover_transitions():
@@ -147,10 +163,12 @@ def test_add_leftover_transitions():
     initial_transitions = len(fsm.transitions)
     fsm._add_leftover_transitions()
     assert len(fsm.transitions) >= initial_transitions
+    for state in fsm.states:
+        triggers = [trigger[0] for trigger in fsm._get_triggers(state)]
+        assert sorted(triggers) == sorted(fsm.events)
 
 # Test finding 1-equivalent states
-def test_find_1_equivalent():
-    fsm = FSMGenerator(num_states=6, num_inputs=4)
+def test_find_1_equivalent(fsm):
     equivalence_sets = fsm._find_1_equivalent()
     assert isinstance(equivalence_sets, dict)
     for key, value in equivalence_sets.items():
@@ -163,6 +181,11 @@ def test_get_dest_from_trigger():
     trigger = fsm._get_triggers(state)[0]
     dest = fsm._get_dest_from_trigger(state, trigger)
     assert dest in fsm.states or dest is None
+
+def test_invalid_transition(fsm):
+    """ should raise an error if the transition is invalid """
+    with pytest.raises(LookupError):
+        fsm._get_dest_from_trigger("S0", "INVALID_TRIGGER")
 
 # Test getting all transitions from a state
 def test_get_transitions():
@@ -202,10 +225,17 @@ def test_save(tmp_path):
     assert loaded_fsm.events == fsm.events
     assert loaded_fsm.transitions == fsm.transitions
 
+def test_load_corrupted_file(tmp_path):
+    file_path = tmp_path / "corrupted_fsm.pkl"
+    with open(file_path, "wb") as f:
+        f.write(b"corrupted_data")
+
+    with pytest.raises(pickle.UnpicklingError):
+        pickle.load(open(file_path, "rb"))
+
 
 # Test applying an input sequence to the FSM
-def test_apply_input_sequence():
-    fsm = FSMGenerator(num_states=4, num_inputs=3)
+def test_apply_input_sequence(fsm):
     state = fsm.states[0]
     sequence = "".join(fsm.events)  # Using all possible events
 
@@ -214,6 +244,15 @@ def test_apply_input_sequence():
     assert final_state in fsm.states
     assert isinstance(output_seq, tuple)
     assert len(output_seq) == len(sequence)
+
+def test_apply_invalid_sequence(fsm):
+    state = fsm.states[0]
+    with pytest.raises(ValueError):
+        fsm.apply_input_sequence(state, "INVALID_EVENT")
+
+def test_draw_invalid_path(fsm):
+    with pytest.raises(OSError):
+        fsm.draw("/invalid/path/image.png")
 
 
 
