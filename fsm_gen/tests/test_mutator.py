@@ -126,6 +126,11 @@ def test_mutation_application(mutator, testing_fsm): #ensures a previously appli
     assert mutator.mutations_applied
     assert pickle.dumps(mutator.fsm) != original_fsm
     
+def test_get_num_transitions_exclude_loops(mutator):
+    fsm = FSMGenerator(num_inputs=1,num_states=1)
+    mutator = Mutator(fsm)
+    assert 0 == mutator._get_num_transitions_exclude_loops(fsm.transitions[0]["dest"],True)
+
 '''BAD TESTS TO FIX'''
 
 def test_mutation_preserves_connectivity(mutator): #TODO
@@ -170,9 +175,9 @@ def cleanup():
 
 # _remove_state() # done
 
-# _change_trigger_output() # done ? TODO
+# _change_trigger_output() # done
 
-# _change_trans_dest() # done ? TODO
+# _change_trans_dest() # done
 
 # _get_num_transitions_exclude_loops() #  TODO
 
