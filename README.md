@@ -10,7 +10,7 @@
     ```
 4. Create a virtual environment and setup dependencies:
     ```bash
-    python -m venv ~/.venv/darwin
+    python3 -m venv ~/.venv/darwin
     ```
     ```bash
     source ~/.venv/darwin/bin/activate

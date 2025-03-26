@@ -259,7 +259,7 @@ def test_draw_invalid_path(fsm):
 ################  STRESS TESTING  ################
 
 # Test FSM generation with different sizes.
-@pytest.mark.parametrize("num_states, num_inputs", [(3, 2), (5, 3), (10, 4)])
+@pytest.mark.parametrize("num_states, num_inputs", [(2, 2), (5, 3), (10, 4)])
 def test_fsm_different_sizes(num_states, num_inputs):
     fsm = FSMGenerator(num_states=num_states, num_inputs=num_inputs)
 
