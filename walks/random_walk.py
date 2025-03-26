@@ -30,7 +30,10 @@ class RandomWalk:
         self.original_fsm = original_fsm
         self.mutated_fsm = mutated_fsm
         self.transitions_length = len(mutated_fsm.transitions)
-        self.target_coverage = target_coverage
+        if target_coverage > 100:
+            self.target_coverage = 100
+        else:
+            self.target_coverage = target_coverage
         self.HSI_suite = HSI_suite
 
 
@@ -176,6 +179,15 @@ class RandomWalk:
                 outputs = ()
                 for pair in walk_since_reset[:len(input_seq)]:
                     io = pair.split("->")[1].split(" / ")
+                    # if len(io) == 2:
+                    #     key += str(io[0])
+                    #     outputs += (io[1],)
+                    # if len(io) == 3:
+                    #     key += str(io[0])
+                    #     outputs += (io[1],)
+                    # if len(io) == 1:
+                    #     key += str(io[0])
+                    #     outputs += (io[1],)
                     key += str(io[0])
                     outputs += (io[1],)
                 io_sequence[key] = outputs
