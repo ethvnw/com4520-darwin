@@ -18,7 +18,7 @@ class FSMGenerator:
         """
         self.states = [f"S{i}" for i in range(num_states)]
         self.events = [f"{chr(i + 65)}" for i in range(num_inputs)]
-        self.outputs = [f"{chr(i + 65)}" for i in range(num_outputs)]
+        self.outputs = [f"{chr(i + 128512)}" for i in range(num_outputs)]
 
         self._try_generate_connected_machine()
 

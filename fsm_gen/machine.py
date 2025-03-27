@@ -21,7 +21,7 @@ class Machine(GraphMachine):
             "active": {"color": "red", "fillcolor": "darksalmon", "peripheries": "2"},
             "previous": {"color": "blue", "fillcolor": "azure", "peripheries": "1"},
         },
-        "edge": {"default": {"color": "black"}, "previous": {"color": "blue"}},
+        "edge": {"default": {"color": "black", "fontname": "Noto Color Emoji"}, "previous": {"color": "blue"}},
         "graph": {
             "default": {"color": "black", "fillcolor": "white", "style": "solid"},
             "previous": {"color": "blue", "fillcolor": "azure", "style": "filled"},
