@@ -85,35 +85,7 @@ def test_change_trans_dest():
             break
     assert found
 
-# TODO discuss this
-'''
-def test_mutation_effects(): # had 1 error in 1000 test runs
-    """Test if all types of mutations are applied by running multiple mutations on fresh FSM instances."""
-    mutation_types_encountered = set()
-    expected_mutations = {"add_state", "remove_state", "change_trigger_output", "change_transition_destination"} ### STILL TO FIX
-    for _ in range(20):  # Run multiple mutations to cover all types
-        fsm = FSMGenerator(num_states=5, num_inputs=3)  # Create a fresh FSM
-        mutator = Mutator(fsm)  # Create a new Mutator instance
-        initial_state_count = len(fsm.states)
-        initial_transition_count = len(fsm.transitions)
-        original_transitions = pickle.dumps(fsm.transitions)
-        
-        mutator.create_mutated_fsm()
-        if len(mutator.fsm.states) > initial_state_count:
-            mutation_types_encountered.add("add_state")
-        elif len(mutator.fsm.states) < initial_state_count:
-            mutation_types_encountered.add("remove_state")
-        if len(mutator.fsm.transitions) > initial_transition_count:
-            mutation_types_encountered.add("add_transition")
-        elif len(mutator.fsm.transitions) < initial_transition_count:
-            mutation_types_encountered.add("remove_transition")
-        if pickle.dumps(mutator.fsm.transitions) != original_transitions:
-            mutation_types_encountered.add("modify_transition")
-            
-    assert mutation_types_encountered == expected_mutations, f"Missing mutation types: {expected_mutations - mutation_types_encountered}"
-'''
-
-def test_create_mutated_fsm(mutated_fsm): #POSSIBLE TODO 
+def test_create_mutated_fsm(mutated_fsm):
     mutated_fsm.draw("mutated.png")
     with open("mutated.pkl", "wb") as f:
         pickle.dump(mutated_fsm, f)
@@ -179,7 +151,7 @@ def cleanup():
 
 # _change_trans_dest() # done
 
-# _get_num_transitions_exclude_loops() #  TODO
+# _get_num_transitions_exclude_loops() done
 
 # _check determinism() #  TODO
 
