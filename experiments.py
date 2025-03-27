@@ -7,7 +7,7 @@ from fsm_gen.mutator import Mutator
 from walks.hsi import generate_HSI_suite
 from walks.random_walk import RandomWalk
 
-FILENAME = f"results/{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"
+FILENAME = f"results/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
 def write_to_csv(state_size, input_size, percent, walk_type, result):
     with open(FILENAME, mode="a", newline="") as f:
@@ -15,8 +15,8 @@ def write_to_csv(state_size, input_size, percent, walk_type, result):
         writer.writerow([state_size, input_size, percent, result["hsi_len"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
 
 
-def run_walk(state_size, input_size, percent, walk_type):
-    fsm = FSMGenerator(state_size, input_size)
+def run_walk(state_size, input_size, output_size, percent, walk_type):
+    fsm = FSMGenerator(state_size, input_size, output_size)
     hsi_suite = generate_HSI_suite(fsm)
     mutator = Mutator(fsm)
     mutated_fsm = mutator.create_mutated_fsm()
@@ -41,7 +41,8 @@ def run_walk(state_size, input_size, percent, walk_type):
 def main():
     state_sizes = [5, 10, 20, 40]
     input_size_multipliers = {"2": 2, "n/2": 0.5, "n": 1, "2n": 2}
-    percent_coverage = [80, 90, 95, 99.5]
+    output_size_multipliers = {"2": 2, "n/2": 0.5, "n": 1, "2n": 2}
+    percent_coverage = [80, 90, 95, 100]
 
     if not os.path.exists("results"):
         os.mkdir("results")
@@ -60,7 +61,7 @@ def main():
             for _ in range(20):
                 for walk_type in RandomWalk.WalkType:
                     for percent in percent_coverage:
-                        run_walk(state_size, input_size, percent, walk_type)
+                        run_walk(state_size, input_size, 5, percent, walk_type)
 
 if __name__ == "__main__":
     main()

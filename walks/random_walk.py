@@ -7,7 +7,6 @@ from fsm_gen.generator import FSMGenerator
 A class to perform different types of (often random) walks on a given FSM.
 """
 class RandomWalk:
-    MAX_WALK_LENGTH = 100000
     class WalkType(Enum): 
         RANDOM = 0
         RANDOM_WITH_RESET = 1
@@ -35,6 +34,7 @@ class RandomWalk:
         else:
             self.target_coverage = target_coverage
         self.HSI_suite = HSI_suite
+        self.max_walk_length = len(self.original_fsm.states)**2 * len(self.original_fsm.events)
 
 
     def walk(self, walk_type: WalkType, step_limit: int = 5) -> list[str]:
@@ -80,7 +80,7 @@ class RandomWalk:
             input_probabilities.append(probabilities[i] / summed_probabilities)
 
         while coverage < self.target_coverage:
-            if len(walk) > self.MAX_WALK_LENGTH:
+            if len(walk) > self.max_walk_length:
                 return -1
 
             triggers = self.mutated_fsm._get_triggers(state)
@@ -112,7 +112,7 @@ class RandomWalk:
         self_loop_triggers = []
 
         while coverage < self.target_coverage:
-            if len(walk) > self.MAX_WALK_LENGTH:
+            if len(walk) > self.max_walk_length:
                 return -1
             
             triggers = self.mutated_fsm._get_triggers(state)
@@ -162,7 +162,7 @@ class RandomWalk:
         transitions_executed = set()
 
         while coverage < self.target_coverage:
-            if len(walk) > self.MAX_WALK_LENGTH:
+            if len(walk) > self.max_walk_length:
                 return -1
             
             triggers = self.mutated_fsm._get_triggers(state)
@@ -222,7 +222,7 @@ class RandomWalk:
         walk = []
 
         while coverage < self.target_coverage:
-            if len(walk) > self.MAX_WALK_LENGTH:
+            if len(walk) > self.max_walk_length:
                 return -1
             
             triggers = self.mutated_fsm._get_triggers(state)

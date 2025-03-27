@@ -177,7 +177,12 @@ class Mutator:
         while f"Changed trigger output of transition {transition}" in self.mutations_applied:
             transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(' / ')
-        transition["trigger"] = f'{transition_trigger[0]} / {1 - int(transition_trigger[1])}'
+
+        new_output = random.choice(self.fsm.outputs)
+        while new_output == transition_trigger[1]:
+            new_output = random.choice(self.fsm.outputs)
+
+        transition["trigger"] = f'{transition_trigger[0]} / {new_output}'
 
         self.mutations_applied.append(f"Changed trigger output of transition {transition}")
 

@@ -8,7 +8,7 @@ from fsm_gen.machine import Machine
 A class to generate a FSM satisfying specific realistic properties.
 """
 class FSMGenerator:
-    def __init__(self, num_states: int, num_inputs: int) -> None:
+    def __init__(self, num_states: int, num_inputs: int, num_outputs: int) -> None:
         """
         Create a finite state machine with a given number of states and inputs.
 
@@ -18,6 +18,7 @@ class FSMGenerator:
         """
         self.states = [f"S{i}" for i in range(num_states)]
         self.events = [f"{chr(i + 65)}" for i in range(num_inputs)]
+        self.outputs = [f"{chr(i + 65)}" for i in range(num_outputs)]
 
         self._try_generate_connected_machine()
 
@@ -55,7 +56,7 @@ class FSMGenerator:
                 dest = random.choice(self.states)
         
                 transitions.append({
-                    'trigger': event + ' / ' + str(random.randint(0, 1)),
+                    'trigger': event + ' / ' + random.choice(self.outputs),
                     'source': state,
                     'dest': dest
                 })
@@ -122,7 +123,7 @@ class FSMGenerator:
                 dest = random.choice(self.states)
 
                 self.transitions.append({
-                    'trigger': trigger + ' / ' + str(random.randint(0, 1)),
+                    'trigger': trigger + ' / ' + random.choice(self.outputs),
                     'source': state,
                     'dest': dest
                 })
@@ -148,7 +149,7 @@ class FSMGenerator:
                         return False
                     
                     self.transitions.append({
-                        'trigger': available_triggers[0] + ' / ' + str(random.randint(0, 1)),
+                        'trigger': available_triggers[0] + ' / ' + random.choice(self.outputs),
                         'source': state,
                         'dest': target
                     })
