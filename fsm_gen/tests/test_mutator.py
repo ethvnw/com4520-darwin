@@ -104,6 +104,9 @@ def test_get_num_transitions_exclude_loops(mutator):
     assert 0 == mutator._get_num_transitions_exclude_loops(fsm.transitions[0]["dest"],True)
 
 '''BAD TESTS TO FIX'''
+def test_fsm_connectivity(mutator):
+    mutator._mutate()
+    assert mutator._check_connectivity()
 
 def test_check_connectivity(sample_fsm):
     assert sample_fsm._ensure_connected_machine()
@@ -111,10 +114,10 @@ def test_check_connectivity(sample_fsm):
 def test_mutation_preserves_connectivity(mutator):
     mutator._mutate()
     assert mutator.fsm._ensure_connected_machine()
-
-def test_mutated_fsm_determinism(mutator): #TODO
-
-    assert True
+    
+def test_fsm_determinism(mutator):
+    mutator._mutate()
+    assert isinstance(mutator._check_determinism(), bool)
     
 '''END OF BAD TESTS'''
 
