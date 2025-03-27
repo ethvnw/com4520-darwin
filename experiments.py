@@ -4,7 +4,7 @@ import os
 
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.mutator import Mutator
-from walks.hsi import generate_HSI_suite
+from walks.hsi import generate_harmonised_state_identifiers, generate_HSI_suite
 from walks.random_walk import RandomWalk
 
 FILENAME = f"results/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
@@ -12,7 +12,7 @@ FILENAME = f"results/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 def write_to_csv(state_size, input_size, output_size, percent, walk_type, result):
     with open(FILENAME, mode="a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([state_size, input_size, output_size, percent, result["hsi_len"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
+        writer.writerow([state_size, input_size, output_size, percent, result["hsi_len"], result["sum_hi"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
 
 
 def run_walk(state_size, input_size, output_size, percent, walk_type):
@@ -20,7 +20,14 @@ def run_walk(state_size, input_size, output_size, percent, walk_type):
     while len(fsm.states) == 1:
         fsm = FSMGenerator(state_size, input_size, output_size)
 
-    hsi_suite = generate_HSI_suite(fsm)
+    len_state_identifiers = 0
+    state_identifiers = generate_harmonised_state_identifiers(fsm)
+    for set in state_identifiers.values():
+        for seq in set:
+            len_state_identifiers += len(seq)
+
+    hsi_suite = generate_HSI_suite(fsm, state_identifiers)
+
     mutator = Mutator(fsm)
     mutated_fsm = mutator.create_mutated_fsm()
     
@@ -32,6 +39,7 @@ def run_walk(state_size, input_size, output_size, percent, walk_type):
     detected_fault = walker.detected_fault(walk)
 
     results = {
+        "sum_hi": len_state_identifiers,
         "hsi_len": len(hsi_suite),
         "walk_len": len(walk) if type(walk) == list else walk,
         "detected_fault_index": detected_fault,
@@ -51,7 +59,7 @@ def main():
 
     with open(FILENAME, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["State Size", "Input Size", "Output Size", "Percent Coverage", "HSI Suite Length", "Walk Type", "Walk Length", "Detected Fault Index", "Time Taken"])
+        writer.writerow(["State Size", "Input Size", "Output Size", "Percent Coverage", "HSI Suite Length", "H_i Sum", "Walk Type", "Walk Length", "Detected Fault Index", "Time Taken"])
 
     for state_size in state_sizes:
         for input_size_multiplier in size_multipliers:

@@ -102,10 +102,11 @@ def generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[st
         state_identifiers[s1].add(seq)
         state_identifiers[s2].add(seq)
 
+
     return state_identifiers
 
 
-def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
+def generate_HSI_suite(fsm: FSMGenerator, state_identifiers: dict[str, set[str]]) -> dict[str, tuple[str]]:
     """
     Generate the HSI test set for the FSM using the HSI method.
 
@@ -115,7 +116,6 @@ def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
     Returns:
         set: The HSI test set for the FSM.
     """
-    state_identifiers = generate_harmonised_state_identifiers(fsm)
     transition_cover = _generate_transition_cover(fsm)
     hsi_test_set = defaultdict(tuple)
 
@@ -133,4 +133,5 @@ def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
                 hsi_test_set.pop(key)
                 break
 
+    print(hsi_test_set)
     return hsi_test_set
