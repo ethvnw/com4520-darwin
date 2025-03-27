@@ -70,7 +70,7 @@ def _generate_transition_cover(fsm: FSMGenerator) -> set[str]:
         return transition_cover
 
 
-def _generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[str]]:
+def generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[str]]:
     """
     Generate a harmonised set of state identifiers for the FSM.
 
@@ -115,7 +115,7 @@ def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
     Returns:
         set: The HSI test set for the FSM.
     """
-    state_identifiers = _generate_harmonised_state_identifiers(fsm)
+    state_identifiers = generate_harmonised_state_identifiers(fsm)
     transition_cover = _generate_transition_cover(fsm)
     hsi_test_set = defaultdict(tuple)
 

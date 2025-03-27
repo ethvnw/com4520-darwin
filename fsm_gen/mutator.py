@@ -20,7 +20,7 @@ class Mutator:
         Args:
             fsm (FSMGenerator): the (unmutated) FSM to apply mutations to.
         """
-        self.fsm = fsm
+        self.fsm = copy.deepcopy(fsm) # goated change by ethan
         # self.num_mutations = int(0.4 * len(self.fsm.states))
         self.num_mutations = 1
         self.mutations_applied = []
@@ -61,7 +61,7 @@ class Mutator:
 
             # Ensure connectivity after each mutation (and apply change trigger output as a fallback)
             if not self._check_connectivity():
-                self.fsm = original_fsm
+                self.fsm = copy.deepcopy(original_fsm)
                 self._change_trigger_output()
 
         if self.DEBUG:
@@ -119,7 +119,7 @@ class Mutator:
         original_transitions = copy.deepcopy(self.fsm.transitions)
         original_fsm = copy.deepcopy(self.fsm)
 
-        while len(states_to_check) != 0 and not state_found:
+        while len(states_to_check) != 0 and state_found == False:
             state_to_remove = random.choice(states_to_check)
 
             # Only remove states if they have equal or more incoming transitions as outgoing transitions
@@ -162,20 +162,14 @@ class Mutator:
             else:
                 states_to_check.remove(state_to_remove)
 
-        # Apply different mutation type if a state cannot be removed
-        if not state_found:
-            alternative_mutations = [self._change_trans_dest, self._change_trigger_output]
-            alternative_mutation_choice = random.choice([0,1])
-            alternative_mutations[alternative_mutation_choice]()
-
 
     def _change_trigger_output(self):
         """
         Alter the output of a random transition to an opposite value (0 -> 1, 1 -> 0).
         """
         transition = random.choice(self.fsm.transitions)
-        while f"Changed trigger output of transition {transition}" in self.mutations_applied:
-            transition = random.choice(self.fsm.transitions)
+        #while f"Changed trigger output of transition {transition}" in self.mutations_applied:
+        #    transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(' / ')
 
         new_output = random.choice(self.fsm.outputs)
@@ -222,7 +216,9 @@ class Mutator:
         transition = random.choice(self.fsm.transitions)
 
         # Ensures FSM is connected still (and avoid applying mutation to already mutated transitions)
-        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2 or f"Changed destination of transition {transition}" in self.mutations_applied:
+        #while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2 or f"Changed destination of transition {transition}" in self.mutations_applied:
+        #    transition = random.choice(self.fsm.transitions)
+        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2:
             transition = random.choice(self.fsm.transitions)
 
         # Make sure random destination state cannot be the same state as original destination
@@ -232,17 +228,17 @@ class Mutator:
         transition["dest"] = random_dest
 
         # Don't apply mutation if connectivity is lost
-        if self._check_connectivity():
-            self.mutations_applied.append(f"Changed destination of transition {transition}")
-        else:
-            self.fsm = original_fsm
-            self.fsm.transitions = original_transitions[:]
-            self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
-                                       graph_engine="pygraphviz", auto_transitions=False,
-                                       transitions=self.fsm.transitions)
-            alternative_mutations = [self._change_trigger_output, self._change_trans_dest]
-            alternative_mutation_choice = random.choice([0,1])
-            alternative_mutations[alternative_mutation_choice]()
+        #if self._check_connectivity():
+        self.mutations_applied.append(f"Changed destination of transition {transition}")
+        #else:
+        #    self.fsm = original_fsm
+        #    self.fsm.transitions = original_transitions[:]
+        #    self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
+        #                               graph_engine="pygraphviz", auto_transitions=False,
+        #                               transitions=self.fsm.transitions)
+        #    alternative_mutations = [self._change_trigger_output, self._change_trans_dest]
+        #    alternative_mutation_choice = random.choice([0,1])
+        #    alternative_mutations[alternative_mutation_choice]()
 
 
     def _check_determinism(self) -> bool:

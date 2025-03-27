@@ -1,7 +1,9 @@
+from collections import defaultdict
 import random
 from enum import Enum
 
 from fsm_gen.generator import FSMGenerator
+from walks.hsi import generate_harmonised_state_identifiers
 
 """
 A class to perform different types of (often random) walks on a given FSM.
@@ -59,6 +61,30 @@ class RandomWalk:
             result = self._statistical_walk()
         return result
     
+    def _calculate_event_probabilities(self) -> dict[str, dict[str, float]]:
+        state_event_probabilities = defaultdict(dict)
+        state_identifiers = generate_harmonised_state_identifiers(self.original_fsm)
+
+        for state in self.original_fsm.states:
+            seqs = state_identifiers[state]
+            char_count = defaultdict(int)
+            for seq in seqs:
+                for char in seq:
+                    char_count[char] += 1
+
+            char_sum = sum(char_count.values())
+            for event in self.original_fsm.events:
+                if event not in char_count.keys():
+                    char_sum += 1
+
+            for event in self.original_fsm.events:
+                if event in char_count.keys():
+                    state_event_probabilities[state][event] = char_count[event] / char_sum
+                else:
+                    state_event_probabilities[state][event] = 1 / char_sum
+
+        return state_event_probabilities
+    
 
     def _statistical_walk(self) -> int:
         """
@@ -73,19 +99,19 @@ class RandomWalk:
         state = self.mutated_fsm.machine.initial
         walk = []
 
-        input_probabilities = []
-        probabilities = [random.random() for i in range(0, len(self.mutated_fsm.events))]
-        summed_probabilities = sum(probabilities)
-        for i in range(0, len(probabilities)):
-            input_probabilities.append(probabilities[i] / summed_probabilities)
+        state_event_probabilities = self._calculate_event_probabilities()
 
         while coverage < self.target_coverage:
             if len(walk) > self.max_walk_length:
                 return -1
 
             triggers = self.mutated_fsm._get_triggers(state)
-            trigger = random.choices(triggers, input_probabilities, k=1)[0]
+            try:
+                trigger = random.choices(triggers, weights=[state_event_probabilities[state][t.split(" / ")[0]] for t in triggers])[0]
 
+            except KeyError:
+                trigger = random.choice(triggers)
+                
             self.mutated_fsm.machine.trigger(trigger)
             transitions_executed.add(f"{state}->{trigger}")
             walk.append(trigger)
