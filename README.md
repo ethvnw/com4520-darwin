@@ -10,7 +10,7 @@
     ```
 4. Create a virtual environment and setup dependencies:
     ```bash
-    python -m venv ~/.venv/darwin
+    python3 -m venv ~/.venv/darwin
     ```
     ```bash
     source ~/.venv/darwin/bin/activate
@@ -19,22 +19,12 @@
     pip install -r requirements.txt
     ```
 
-## Running the application
-
-Generate a random FSM with:
-
-```bash
-python random_gen.py
-```
-
-Mutate the generated FSM with:
-
-```bash
-python mutator.py --machine <path_to_fsm_pkl>
-```
-
-Run experiments with:
-
+## Running Experiments
+Either:
 ```bash
 python experiments.py
+```
+or:
+```bash
+mpiexec -n 4 python hpc_experiments.py
 ```

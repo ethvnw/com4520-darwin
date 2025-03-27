@@ -6,13 +6,23 @@ import random
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.machine import Machine
 
-
+"""
+A class to apply different types of mutations to a given FSM.
+"""
 class Mutator:
+    DEBUG = False
     MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
 
     def __init__(self, fsm: FSMGenerator) -> None:
+        """
+        Create a mutator instance for a given FSM.
+
+        Args:
+            fsm (FSMGenerator): the (unmutated) FSM to apply mutations to.
+        """
         self.fsm = fsm
-        self.num_mutations = int(0.4 * len(self.fsm.states))
+        # self.num_mutations = int(0.4 * len(self.fsm.states))
+        self.num_mutations = 1
         self.mutations_applied = []
 
 
@@ -28,10 +38,6 @@ class Mutator:
                                    graph_engine="pygraphviz", auto_transitions=False,
                                    transitions=self.fsm.transitions)
         
-        if not os.path.exists('pickles/mutated'):
-            os.makedirs('pickles/mutated')    
-        pickle.dump(self.fsm, open(f'pickles/mutated/mutated.pkl', 'wb'))
-
         return self.fsm
 
 
@@ -58,10 +64,11 @@ class Mutator:
                 self.fsm = original_fsm
                 self._change_trigger_output()
 
-        print("Mutations applied:")
-        for mutation in self.mutations_applied:
-            print(f"\t{mutation}")
-        self.get_machine_properties()
+        if self.DEBUG:
+            print("Mutations applied:")
+            for mutation in self.mutations_applied:
+                print(f"\t{mutation}")
+            self.get_machine_properties()
 
     
     def _add_state(self):
@@ -167,7 +174,8 @@ class Mutator:
         Alter the output of a random transition to an opposite value (0 -> 1, 1 -> 0).
         """
         transition = random.choice(self.fsm.transitions)
-
+        while f"Changed trigger output of transition {transition}" in self.mutations_applied:
+            transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(' / ')
         transition["trigger"] = f'{transition_trigger[0]} / {1 - int(transition_trigger[1])}'
 
@@ -208,8 +216,8 @@ class Mutator:
 
         transition = random.choice(self.fsm.transitions)
 
-        # Ensures FSM is connected still
-        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2:
+        # Ensures FSM is connected still (and avoid applying mutation to already mutated transitions)
+        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2 or f"Changed destination of transition {transition}" in self.mutations_applied:
             transition = random.choice(self.fsm.transitions)
 
         # Make sure random destination state cannot be the same state as original destination

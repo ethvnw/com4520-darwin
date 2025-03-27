@@ -1,76 +1,66 @@
-import concurrent.futures
 import csv
 import datetime
-
-from tqdm import tqdm
+import os
 
 from fsm_gen.generator import FSMGenerator
+from fsm_gen.mutator import Mutator
+from walks.hsi import generate_HSI_suite
 from walks.random_walk import RandomWalk
 
+FILENAME = f"results/{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"
 
-def save_to_csv_row(writer, key, result):
-    state_size, input_size, machine_index, coverage = key.split("_")
-    state_size = state_size[1:]  # Remove the 'S' prefix
-    input_size = input_size[1:]  # Remove the 'I' prefix
-    coverage = coverage[1:]  # Remove the 'C' prefix
-
-    writer.writerow([state_size, input_size, coverage, result["walk_len"], result["time_taken"]])
+def write_to_csv(state_size, input_size, percent, walk_type, result):
+    with open(FILENAME, mode="a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([state_size, input_size, percent, result["hsi_len"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
 
 
-def run_walk(state_size, input_size, index, percent):
-    fsm = FSMGenerator(state_size, input_size).machine
-    key = f"S{state_size}_I{input_size}_M{index}"
+def run_walk(state_size, input_size, percent, walk_type):
+    fsm = FSMGenerator(state_size, input_size)
+    hsi_suite = generate_HSI_suite(fsm)
+    mutator = Mutator(fsm)
+    mutated_fsm = mutator.create_mutated_fsm()
+    
+    walker = RandomWalk(fsm, mutated_fsm, percent, hsi_suite)
+
     start_time = datetime.datetime.now()
-    walk = RandomWalk(fsm, RandomWalk.WalkType.RANDOM, percent)
-    walk_len = walk.walk()
+    walk = walker.walk(walk_type)
     end_time = datetime.datetime.now()
+    detected_fault = walker.detected_fault(walk)
 
-    return f"{key}_C{percent}", {
-        "walk_len": walk_len,
+    results = {
+        "hsi_len": len(hsi_suite),
+        "walk_len": len(walk) if type(walk) == list else walk,
+        "detected_fault_index": detected_fault,
         "time_taken": end_time - start_time
     }
 
+    write_to_csv(state_size, input_size, percent, walk_type, results)
 
-if __name__ == '__main__':
+
+def main():
     state_sizes = [5, 10, 20, 40]
-    input_sizes = ["2", "n/2", "n", "2n"]
-    percent_cov = [80, 90, 95, 99.5]
+    input_size_multipliers = {"2": 2, "n/2": 0.5, "n": 1, "2n": 2}
+    percent_coverage = [80, 90, 95, 99.5]
 
-    input_size_multipliers = {
-        "2": 2,
-        "n/2": 0.5,
-        "n": 1,
-        "2n": 2
-    }
+    if not os.path.exists("results"):
+        os.mkdir("results")
 
-    print("State sizes:", state_sizes)
-    print("Input sizes:", input_sizes)
-    print("Percent coverages:", percent_cov)
+    with open(FILENAME, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["State Size", "Input Size", "Percent Coverage", "HSI Suite Length", "Walk Type", "Walk Length", "Detected Fault Index", "Time Taken"])
 
-    filename = f"experiment_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    for state_size in state_sizes:
+        for input_size_multiplier in input_size_multipliers:
+            if state_size >= 20 and input_size_multiplier == "2":
+                continue
 
-    with open(filename, mode="w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["State Size", "Input Size", "Target Coverage", "Walk Length", "Time Taken"])
-        
-        total_tasks = len(state_sizes) * len(input_sizes) * 20 * len(percent_cov)
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = []
+            input_size = 2 if input_size_multiplier == "2" else int(state_size * input_size_multipliers[input_size_multiplier])
 
-            with tqdm(total=total_tasks, desc="Running random walks") as pbar:
-                for state_size in state_sizes:
-                    for input_size_key in input_sizes:
-                        if input_size_key == "2":
-                            input_size = 2
-                        else:
-                            input_size = int(state_size * input_size_multipliers[input_size_key])
+            for _ in range(20):
+                for walk_type in RandomWalk.WalkType:
+                    for percent in percent_coverage:
+                        run_walk(state_size, input_size, percent, walk_type)
 
-                        for i in range(20):  # Generate 20 random automata for each configuration
-                            for percent in percent_cov:
-                                futures.append(executor.submit(run_walk, state_size, input_size, i, percent))
-
-                for future in concurrent.futures.as_completed(futures):
-                    result_key, result = future.result()
-                    save_to_csv_row(writer, result_key, result)
-                    pbar.update(1)
-                    del result
+if __name__ == "__main__":
+    main()

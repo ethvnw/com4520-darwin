@@ -2,12 +2,20 @@ import pickle
 import random
 from pathlib import Path
 
-
 from fsm_gen.machine import Machine
 
-
-class FSMGenerator: 
+"""
+A class to generate a FSM satisfying specific realistic properties.
+"""
+class FSMGenerator:
     def __init__(self, num_states: int, num_inputs: int) -> None:
+        """
+        Create a finite state machine with a given number of states and inputs.
+
+        Args:
+            num_states (int): the number of inputs that can be attempted at any state.
+            num_inputs (int): the number of states that are in the FSM.
+        """
         self.states = [f"S{i}" for i in range(num_states)]
         self.events = [f"{chr(i + 65)}" for i in range(num_inputs)]
 
@@ -22,7 +30,7 @@ class FSMGenerator:
 
         while not connected:
             self.transitions = self._generate_transitions()        
-            connected = self.ensure_connected_machine()
+            connected = self._ensure_connected_machine()
 
         self._add_leftover_transitions()
         self._make_minimal()
@@ -120,7 +128,7 @@ class FSMGenerator:
                 })
         
 
-    def ensure_connected_machine(self) -> bool:
+    def _ensure_connected_machine(self) -> bool:
         """
         Ensure that all states are reachable from any other state.
 
@@ -187,11 +195,13 @@ class FSMGenerator:
         Returns:
             str: The destination state of the transition.
         """
+        
         for transition in self.transitions:
             if transition['source'] == source and transition['trigger'] == trigger:
                 return transition['dest']
             
-        return None
+        #return None
+        raise LookupError(f"No valid transition found for state '{source}' with trigger '{trigger}'")
     
 
     def _get_transitions(self, source: str=None, dest: str=None) -> list:
@@ -230,46 +240,47 @@ class FSMGenerator:
         """
         previous_equivalence_dict = self._find_1_equivalent()
 
-        while True:
-            current_equivalence_dict = dict()
+        # Check for if every transition is 1-equivalent for every state in the FSM
+        if len(previous_equivalence_dict) != 1:
+            while True:
+                current_equivalence_dict = dict()
 
-            for key, eq_set in previous_equivalence_dict.items():
-                for state in eq_set:
-                    triggers = self._get_triggers(state)
-                    subset_pointer = key
+                for key, eq_set in previous_equivalence_dict.items():
+                    for state in eq_set:
+                        triggers = self._get_triggers(state)
+                        subset_pointer = key
 
-                    for trigger in triggers:
-                        trigger_input = trigger.split(" / ")[0]
-                        trigger_output = trigger.split(" / ")[1]
-                        subset_pointer += trigger_input
-                        subset_pointer += trigger_output
+                        for trigger in triggers:
+                            trigger_input = trigger.split(" / ")[0]
+                            trigger_output = trigger.split(" / ")[1]
+                            subset_pointer += trigger_input
+                            subset_pointer += trigger_output
 
-                        dest = self._get_dest_from_trigger(state, trigger)
+                            dest = self._get_dest_from_trigger(state, trigger)
 
-                        for key, eq_set in previous_equivalence_dict.items():
-                            if dest in eq_set:
-                                subset_pointer += f"{key},"
-                                break
+                            for key, eq_set in previous_equivalence_dict.items():
+                                if dest in eq_set:
+                                    subset_pointer += f"{key},"
+                                    break
 
-                    subset_pointer_list = subset_pointer.split(",")
-                    subset_pointer_list.sort()
-                    subset_pointer = "".join(subset_pointer_list)
+                        subset_pointer_list = subset_pointer.split(",")
+                        subset_pointer_list.sort()
+                        subset_pointer = "".join(subset_pointer_list)
 
-                    if subset_pointer not in current_equivalence_dict.keys():
-                        current_equivalence_dict[subset_pointer] = set()
-                
-                    current_equivalence_dict[subset_pointer].add(state)
-                                                
-            if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
-                break
+                        if subset_pointer not in current_equivalence_dict.keys():
+                            current_equivalence_dict[subset_pointer] = set()
+                    
+                        current_equivalence_dict[subset_pointer].add(state)
+                                                    
+                if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
+                    break
 
-            previous_equivalence_dict = current_equivalence_dict
+                previous_equivalence_dict = current_equivalence_dict
 
         equivalent_states = []
         for eq_set in previous_equivalence_dict.values():
             if len(eq_set) > 1:
                 equivalent_states.append(eq_set)
-
 
         return equivalent_states
 
@@ -332,10 +343,22 @@ class FSMGenerator:
         self.machine.draw_graph(title).draw(f"fsm_imgs/{filename}", prog='dot')
 
 
-    def apply_input_sequence(self, state: str, sequence: str) -> tuple:
+    def apply_input_sequence(self, state: str, sequence: str) -> tuple[str]:
+        """
+        Apply an input sequence to the machine.
+        
+        Args:
+            state (str): The state to start from.
+            sequence (str): The input sequence to apply.
+
+        Returns:
+            tuple: The final state and the output sequence.
+        """
         output_seq = []
 
         for event in sequence:
+            if event not in self.events:
+                raise ValueError(f"Invalid event: '{event}' in sequence.")
             for transition in self.transitions:
                 if transition['source'] == state and transition['trigger'].startswith(event):
                     output_seq.append(transition['trigger'].split(" / ")[1])
