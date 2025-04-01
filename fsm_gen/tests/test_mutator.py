@@ -9,7 +9,7 @@ from fsm_gen.mutator import Mutator
 
 @pytest.fixture
 def sample_fsm():
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     fsm.draw("original.png")
     return fsm
 
@@ -62,7 +62,7 @@ def test_mutation_effects():
     mutation_types_encountered = set()
     expected_mutations = {"add_state", "remove_state", "add_transition", "remove_transition", "modify_transition"}
     for _ in range(20):  # Run multiple mutations to cover all types
-        fsm = FSMGenerator(num_states=5, num_inputs=3)  # Create a fresh FSM
+        fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=3)  # Create a fresh FSM
         mutator = Mutator(fsm)  # Create a new Mutator instance
         initial_state_count = len(fsm.states)
         initial_transition_count = len(fsm.transitions)
