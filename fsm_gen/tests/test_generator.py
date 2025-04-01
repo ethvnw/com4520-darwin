@@ -29,6 +29,11 @@ def test_fsm_zero_inputs():
     with pytest.raises(ValueError):
         FSMGenerator(num_states=4, num_inputs=0, num_outputs=3)
 
+def test_fsm_zero_outputs():
+    """ Test that the generator raises an error if the number of outputs is zero """
+    with pytest.raises(IndexError):
+        FSMGenerator(num_states=4, num_inputs=3, num_outputs=0)
+
 def test_fsm_negative_states():
     """ Test that the generator raises an error if the number of states is negative """
     with pytest.raises(IndexError):
@@ -38,6 +43,11 @@ def test_fsm_negative_inputs():
     """ Test that the generator raises an error if the number of inputs is negative """
     with pytest.raises(ValueError):
         FSMGenerator(num_states=4, num_inputs=-1, num_outputs=3)
+
+def test_fsm_negative_outputs():
+    """ Test that the generator raises an error if the number of outputs is negative """
+    with pytest.raises(IndexError):
+        FSMGenerator(num_states=4, num_inputs=3, num_outputs=-1)
 
 def test_fsm_single_state():
     """ Test that the generator creates a FSM with a single state """
