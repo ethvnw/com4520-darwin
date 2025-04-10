@@ -9,10 +9,10 @@ from walks.random_walk import RandomWalk
 
 FILENAME = f"results/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
-def write_to_csv(state_size, input_size, output_size, percent, walk_type, result):
+def write_to_csv(state_size, input_size, output_size, percent, walk_type, mutation_applied, result):
     with open(FILENAME, mode="a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([state_size, input_size, output_size, percent, result["hsi_len"], result["sum_hi"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
+        writer.writerow([state_size, input_size, output_size, mutation_applied, percent, result["hsi_len"], result["sum_hi"], walk_type, result["walk_len"], result["detected_fault_index"], result["time_taken"]])
 
 
 def run_walk(state_size, input_size, output_size, percent, walk_type):
@@ -46,7 +46,7 @@ def run_walk(state_size, input_size, output_size, percent, walk_type):
         "time_taken": end_time - start_time
     }
 
-    write_to_csv(state_size, input_size, output_size, percent, walk_type, results)
+    write_to_csv(state_size, input_size, output_size, percent, walk_type, mutator.mutations_applied[0], results)
 
 
 def main():
@@ -59,7 +59,7 @@ def main():
 
     with open(FILENAME, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["State Size", "Input Size", "Output Size", "Percent Coverage", "HSI Suite Length", "H_i Sum", "Walk Type", "Walk Length", "Detected Fault Index", "Time Taken"])
+        writer.writerow(["State Size", "Input Size", "Output Size", "Mutation Applied", "Percent Coverage", "HSI Suite Length", "H_i Sum", "Walk Type", "Walk Length", "Detected Fault Index", "Time Taken"])
 
     for state_size in state_sizes:
         for input_size_multiplier in size_multipliers:
@@ -74,7 +74,7 @@ def main():
 
                 output_size = 2 if output_size_multiplier == "2" else int(state_size * size_multipliers[output_size_multiplier])
 
-                for _ in range(10):
+                for _ in range(3):
                     for walk_type in RandomWalk.WalkType:
                         for percent in percent_coverage:
                             run_walk(state_size, input_size, output_size, percent, walk_type)

@@ -103,7 +103,7 @@ class Mutator:
                     "dest": random.choice(self.fsm.states)
                 })
 
-        self.mutations_applied.append(f"Added state {new_state} using {source_state_trans}")
+        self.mutations_applied.append("New state added")
     
 
     def _remove_state(self):
@@ -150,7 +150,7 @@ class Mutator:
                 # Check that connectivity is maintained when this state is removed
                 if self._check_connectivity():
                     state_found = True
-                    self.mutations_applied.append(f"Removed state {state_to_remove}")
+                    self.mutations_applied.append("Removed state")
                 else:
                     self.fsm = original_fsm
                     self.fsm.states = original_states[:]
@@ -178,7 +178,7 @@ class Mutator:
 
         transition["trigger"] = f'{transition_trigger[0]} / {new_output}'
 
-        self.mutations_applied.append(f"Changed trigger output of transition {transition}")
+        self.mutations_applied.append("Changed output of transition")
 
 
     def _get_num_transitions_exclude_loops(self, state: str, incoming: bool) -> int:
@@ -229,7 +229,7 @@ class Mutator:
 
         # Don't apply mutation if connectivity is lost
         #if self._check_connectivity():
-        self.mutations_applied.append(f"Changed destination of transition {transition}")
+        self.mutations_applied.append("Changed destination of transition")
         #else:
         #    self.fsm = original_fsm
         #    self.fsm.transitions = original_transitions[:]

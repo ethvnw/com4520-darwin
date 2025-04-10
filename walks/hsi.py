@@ -133,5 +133,4 @@ def generate_HSI_suite(fsm: FSMGenerator, state_identifiers: dict[str, set[str]]
                 hsi_test_set.pop(key)
                 break
 
-    print(hsi_test_set)
     return hsi_test_set
