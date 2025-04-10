@@ -30,6 +30,11 @@ def run_walk(state_size, input_size, output_size, percent, walk_type):
 
     mutator = Mutator(fsm)
     mutated_fsm = mutator.create_mutated_fsm()
+
+    try:
+        mutation_applied = mutator.mutations_applied[0]
+    except IndexError:
+        mutation_applied = "No mutation applied"
     
     walker = RandomWalk(fsm, mutated_fsm, percent, hsi_suite)
 
@@ -46,7 +51,7 @@ def run_walk(state_size, input_size, output_size, percent, walk_type):
         "time_taken": end_time - start_time
     }
 
-    write_to_csv(state_size, input_size, output_size, percent, walk_type, mutator.mutations_applied[0], results)
+    write_to_csv(state_size, input_size, output_size, percent, walk_type, mutation_applied, results)
 
 
 def main():
