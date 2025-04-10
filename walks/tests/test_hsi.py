@@ -40,9 +40,6 @@ def fsm():
     return fsm
 
 
-
-### IF ALREADY ON STATE THEN SHORTEST PATH IS EMPTY ####
-### FIX IN CODE ###
 def test_find_shortest_path(fsm):
     """ Ensure a valid list is returned and the path is correct """
     # making sure the shortest path is returned
@@ -53,6 +50,7 @@ def test_find_shortest_path(fsm):
     # checking structure of path
     assert isinstance(path, list)
     assert all(isinstance(event, str) for event in path)
+
 
 
 def test_generate_state_cover(fsm):
@@ -93,6 +91,26 @@ def test_compute_h_sets(fsm):
         assert isinstance(path, set) 
         assert all(isinstance(event, str) for event in path)
 
+def test_compute_h_sets_edge_cases():
+    """ Test the h set generation with a FSM with undistingushable states """
+    fsm = FSMGenerator(num_states=2, num_inputs=1, num_outputs=1)
+    fsm.states = ['S0', 'S1']
+    fsm.events = ['a']
+    fsm.transitions = [
+        {'source': 'S0', 'trigger': 'a / x', 'dest': 'S1'},
+        {'source': 'S1', 'trigger': 'a / x', 'dest': 'S0'},
+    ]
+    fsm.machine = Machine(
+        states=fsm.states,
+        initial='S0',
+        graph_engine='pygraphviz',
+        auto_transitions=False,
+        transitions=fsm.transitions
+    )
+    h_sets = generate_harmonised_state_identifiers(fsm)
+    for h in h_sets.values():
+        assert isinstance(h, set)
+
 
 def test_generate_HSI_suite(fsm):
     identifiers = generate_harmonised_state_identifiers(fsm)
@@ -101,3 +119,21 @@ def test_generate_HSI_suite(fsm):
     assert len(hsi_suite) > 0
     for seq, output in hsi_suite.items():
         assert isinstance(seq, str)
+
+def test_generate_HSI_suite_empty():
+    """ Test the HSI suite generation with a single state FSM """
+    fsm = FSMGenerator(num_states=1, num_inputs=1, num_outputs=1)
+    fsm.states = ['S0']
+    fsm.events = ['a']
+    fsm.transitions = []
+    fsm.machine = Machine(
+        states=fsm.states,
+        initial='S0',
+        graph_engine='pygraphviz',
+        auto_transitions=False,
+        transitions=fsm.transitions
+    )
+    identifiers = generate_harmonised_state_identifiers(fsm)
+    hsi_suite = generate_HSI_suite(fsm, identifiers)
+    assert isinstance(hsi_suite, dict)
+    assert list(hsi_suite.keys()) == []
