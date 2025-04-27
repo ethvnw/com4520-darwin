@@ -1,10 +1,10 @@
-import pytest
 import collections
-import random
 import pickle
-import os
+
+import pytest
 
 from fsm_gen.generator import FSMGenerator
+
 
 @pytest.fixture
 def fsm():
@@ -12,55 +12,66 @@ def fsm():
 
 
 def test_fsm_creation(fsm):
-    """ Test that the generator creates a FSM and its states and transition numbers are correct """
+    """Test that the generator creates a FSM and its states and transition numbers are correct"""
     assert len(fsm.states) == 6
     assert len(fsm.events) == 4
-    assert len(fsm.transitions) == len(fsm.states) * len(fsm.events) # each state has a transition for each event
+    assert len(fsm.transitions) == len(fsm.states) * len(
+        fsm.events
+    )  # each state has a transition for each event
     assert fsm.states[0] == "S0"
     assert all(state.startswith("S") for state in fsm.states)
 
+
 def test_fsm_zero_states():
-    """ Test that the generator raises an error if the number of states is zero """
+    """Test that the generator raises an error if the number of states is zero"""
     with pytest.raises(IndexError):
         FSMGenerator(num_states=0, num_inputs=3, num_outputs=3)
 
+
 def test_fsm_zero_inputs():
-    """ Test that the generator raises an error if the number of inputs is zero """
+    """Test that the generator raises an error if the number of inputs is zero"""
     with pytest.raises(ValueError):
         FSMGenerator(num_states=4, num_inputs=0, num_outputs=3)
 
+
 def test_fsm_zero_outputs():
-    """ Test that the generator raises an error if the number of outputs is zero """
+    """Test that the generator raises an error if the number of outputs is zero"""
     with pytest.raises(IndexError):
         FSMGenerator(num_states=4, num_inputs=3, num_outputs=0)
 
+
 def test_fsm_negative_states():
-    """ Test that the generator raises an error if the number of states is negative """
+    """Test that the generator raises an error if the number of states is negative"""
     with pytest.raises(IndexError):
         FSMGenerator(num_states=-1, num_inputs=3, num_outputs=3)
 
+
 def test_fsm_negative_inputs():
-    """ Test that the generator raises an error if the number of inputs is negative """
+    """Test that the generator raises an error if the number of inputs is negative"""
     with pytest.raises(ValueError):
         FSMGenerator(num_states=4, num_inputs=-1, num_outputs=3)
 
+
 def test_fsm_negative_outputs():
-    """ Test that the generator raises an error if the number of outputs is negative """
+    """Test that the generator raises an error if the number of outputs is negative"""
     with pytest.raises(IndexError):
         FSMGenerator(num_states=4, num_inputs=3, num_outputs=-1)
 
+
 def test_fsm_single_state():
-    """ Test that the generator creates a FSM with a single state """
+    """Test that the generator creates a FSM with a single state"""
     fsm = FSMGenerator(num_states=1, num_inputs=3, num_outputs=3)
     assert len(fsm.states) == 1
     assert len(fsm.events) == 3
     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events)
     assert fsm.states[0] == "S0"
 
+
 def test_no_reachable_states():
     fsm = FSMGenerator(num_states=3, num_inputs=3, num_outputs=3)
     fsm.transitions = []  # Removing transitions
     assert not is_connected(fsm)
+
 
 # def test_fsm_single_input():
 #     """ Test that the generator creates a FSM with a single input """
@@ -69,7 +80,7 @@ def test_no_reachable_states():
 #     assert len(fsm.events) == 1
 #     assert len(fsm.transitions) == len(fsm.states) * len(fsm.events)
 #     assert fsm.events[0] == "A"
-    
+
 
 # Test that transitions are generated correctly
 def test_generate_transitions(fsm):
@@ -82,11 +93,12 @@ def test_generate_transitions(fsm):
         assert transition["source"] in fsm.states
         assert transition["dest"] in fsm.states
     transi = fsm._generate_transitions()
-    #assert len(transi) == len(fsm.states) * len(fsm.events)
+    # assert len(transi) == len(fsm.states) * len(fsm.events)
     for trans in transi:
-        assert 'trigger' in trans
-        assert 'source' in trans
-        assert 'dest' in trans
+        assert "trigger" in trans
+        assert "source" in trans
+        assert "dest" in trans
+
 
 # Test the function to check if a state is reachable from another
 def test_is_reachable_from():
@@ -94,7 +106,8 @@ def test_is_reachable_from():
     for state in fsm.states:
         for target in fsm.states:
             assert fsm._is_reachable_from(state, target) or (state == target)
-    
+
+
 # Check if the FSM is connected
 def is_connected(fsm):
     def dfs(start_state):
@@ -105,30 +118,33 @@ def is_connected(fsm):
             if state not in visited:
                 visited.add(state)
                 for transition in fsm.transitions:
-                    if transition['source'] == state:
-                        stack.append(transition['dest'])
+                    if transition["source"] == state:
+                        stack.append(transition["dest"])
         return visited
 
     all_states = set(fsm.states)
     for state in fsm.states:
         if dfs(state) != all_states:
             return False
-        
+
     return True
+
 
 def test_try_generate_connected_machine(fsm):
     fsm._try_generate_connected_machine()
     assert is_connected(fsm)
+
 
 # Test that ensures the FSM is connected
 def test_fsm_connected():
     fsm = FSMGenerator(num_states=6, num_inputs=4, num_outputs=4)
     assert is_connected(fsm)
 
+
 # Test that there's no duplicate transitions
 def test_no_duplicate_transitions():
     fsm = FSMGenerator(num_states=6, num_inputs=4, num_outputs=4)
-    transitions = [(t['source'], t['dest'], t['trigger']) for t in fsm.transitions]
+    transitions = [(t["source"], t["dest"], t["trigger"]) for t in fsm.transitions]
     assert len(transitions) == len(set(transitions))
 
 
@@ -138,17 +154,19 @@ def is_deterministic(fsm):
 
     for state in fsm.states:
         transitions = [t for t in fsm.transitions if t["source"] == state]
-        triggers = [t["trigger"].split(' / ')[0] for t in transitions]
+        triggers = [t["trigger"].split(" / ")[0] for t in transitions]
 
         if collections.Counter(triggers) != events:
             return False
-        
+
     return True
+
 
 # Test that the FSM is deterministic
 def test_fsm_deterministic():
     fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=3)
     assert is_deterministic(fsm)
+
 
 # Test that the FSM is minimal
 def test_fsm_minimal():
@@ -159,6 +177,7 @@ def test_fsm_minimal():
     assert is_deterministic(fsm)
     assert len(fsm.states) <= initial_state_count
 
+
 # Test getting triggers from a state
 def test_get_triggers():
     fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=3)
@@ -166,6 +185,7 @@ def test_get_triggers():
     triggers = fsm._get_triggers(state)
     assert isinstance(triggers, list)
     assert all(isinstance(trigger, str) for trigger in triggers)
+
 
 # Test adding tranaitions that are missing to make the FSM complete
 def test_add_leftover_transitions():
@@ -177,12 +197,14 @@ def test_add_leftover_transitions():
         triggers = [trigger[0] for trigger in fsm._get_triggers(state)]
         assert sorted(triggers) == sorted(fsm.events)
 
+
 # Test finding 1-equivalent states
 def test_find_1_equivalent(fsm):
     equivalence_sets = fsm._find_1_equivalent()
     assert isinstance(equivalence_sets, dict)
     for key, value in equivalence_sets.items():
         assert isinstance(value, set)
+
 
 # Test getting the destination state from a trigger
 def test_get_dest_from_trigger():
@@ -192,10 +214,12 @@ def test_get_dest_from_trigger():
     dest = fsm._get_dest_from_trigger(state, trigger)
     assert dest in fsm.states or dest is None
 
+
 def test_invalid_transition(fsm):
-    """ should raise an error if the transition is invalid """
+    """should raise an error if the transition is invalid"""
     with pytest.raises(LookupError):
         fsm._get_dest_from_trigger("S0", "INVALID_TRIGGER")
+
 
 # Test getting all transitions from a state
 def test_get_transitions():
@@ -208,6 +232,7 @@ def test_get_transitions():
         assert "source" in transition
         assert "dest" in transition
 
+
 # Test finding equivalent states
 def test_find_equivalent_states():
     fsm = FSMGenerator(num_states=6, num_inputs=4, num_outputs=4)
@@ -216,12 +241,14 @@ def test_find_equivalent_states():
     for eqviv_set in equivalent_states:
         assert isinstance(eqviv_set, set)
 
+
 # Test removing duplicate transitions
 def test_cleanup_transitions():
     fsm = FSMGenerator(num_states=6, num_inputs=4, num_outputs=4)
     initial_transitions = len(fsm.transitions)
     fsm._cleanup_transitions()
     assert len(fsm.transitions) <= initial_transitions
+
 
 # Test saving the FSM and loading it
 def test_save(tmp_path):
@@ -234,6 +261,7 @@ def test_save(tmp_path):
     assert loaded_fsm.states == fsm.states
     assert loaded_fsm.events == fsm.events
     assert loaded_fsm.transitions == fsm.transitions
+
 
 def test_load_corrupted_file(tmp_path):
     file_path = tmp_path / "corrupted_fsm.pkl"
@@ -255,27 +283,34 @@ def test_apply_input_sequence(fsm):
     assert isinstance(output_seq, tuple)
     assert len(output_seq) == len(sequence)
 
+
 def test_apply_invalid_sequence(fsm):
     state = fsm.states[0]
     with pytest.raises(ValueError):
         fsm.apply_input_sequence(state, "INVALID_EVENT")
+
 
 def test_draw_invalid_path(fsm):
     with pytest.raises(OSError):
         fsm.draw("/invalid/path/image.png")
 
 
-
 ################  STRESS TESTING  ################
 
+
 # Test FSM generation with different sizes.
-@pytest.mark.parametrize("num_states, num_inputs, num_outputs", [(3, 2, 2), (5, 3, 2), (10, 4, 3)])
+@pytest.mark.parametrize(
+    "num_states, num_inputs, num_outputs", [(3, 2, 2), (5, 3, 2), (10, 4, 3)]
+)
 def test_fsm_different_sizes(num_states, num_inputs, num_outputs):
-    fsm = FSMGenerator(num_states=num_states, num_inputs=num_inputs, num_outputs=num_outputs)
+    fsm = FSMGenerator(
+        num_states=num_states, num_inputs=num_inputs, num_outputs=num_outputs
+    )
 
     assert len(fsm.states) == num_states
     assert len(fsm.events) == num_inputs
     assert len(fsm.transitions) > 0
+
 
 # # run test on 500 random FSMs
 # tests_failed = []
@@ -312,5 +347,3 @@ def test_fsm_different_sizes(num_states, num_inputs, num_outputs):
 #     assert len(fsm.states) == 100
 #     assert len(fsm.events) == 50
 #     assert len(fsm.transitions) > 0
-
-    

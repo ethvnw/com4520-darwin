@@ -4,10 +4,16 @@ from pathlib import Path
 
 from fsm_gen.machine import Machine
 
-"""
-A class to generate a FSM satisfying specific realistic properties.
-"""
+
 class FSMGenerator:
+    """
+    A class to generate a finite state machine (FSM) with a given number of states and inputs.
+    The FSM is generated with the following properties:
+    - The FSM is connected, meaning that all states are reachable from any other state.
+    - The FSM is deterministic, meaning that there is only one transition for each event from a given state.
+    - The FSM is minimal, meaning that there are no redundant states or transitions.
+    """
+
     def __init__(self, num_states: int, num_inputs: int, num_outputs: int) -> None:
         """
         Create a finite state machine with a given number of states and inputs.
@@ -22,7 +28,6 @@ class FSMGenerator:
 
         self._try_generate_connected_machine()
 
-    
     def _try_generate_connected_machine(self) -> None:
         """
         Try to generate a connected machine. If the machine is not connected, try again.
@@ -30,16 +35,19 @@ class FSMGenerator:
         connected = False
 
         while not connected:
-            self.transitions = self._generate_transitions()        
+            self.transitions = self._generate_transitions()
             connected = self._ensure_connected_machine()
 
         self._add_leftover_transitions()
         self._make_minimal()
         self._cleanup_transitions()
-        self.machine = Machine(states=self.states, initial=self.states[0], 
-                               graph_engine='pygraphviz', auto_transitions=False, 
-                               transitions=self.transitions)
-
+        self.machine = Machine(
+            states=self.states,
+            initial=self.states[0],
+            graph_engine="pygraphviz",
+            auto_transitions=False,
+            transitions=self.transitions,
+        )
 
     def _generate_transitions(self) -> list:
         """
@@ -54,15 +62,16 @@ class FSMGenerator:
             events = random.sample(self.events, len(self.events) - 1)
             for event in events:
                 dest = random.choice(self.states)
-        
-                transitions.append({
-                    'trigger': event + ' / ' + random.choice(self.outputs),
-                    'source': state,
-                    'dest': dest
-                })
+
+                transitions.append(
+                    {
+                        "trigger": event + " / " + random.choice(self.outputs),
+                        "source": state,
+                        "dest": dest,
+                    }
+                )
 
         return transitions
-
 
     def _is_reachable_from(self, state: str, target: str) -> bool:
         """
@@ -83,14 +92,16 @@ class FSMGenerator:
 
             if current_state == target:
                 return True
-            
+
             for transition in self.transitions:
-                if transition['source'] == current_state and transition['dest'] not in reachable_states:
-                    reachable_states.add(transition['dest'])
-                    states_to_check.append(transition['dest'])
+                if (
+                    transition["source"] == current_state
+                    and transition["dest"] not in reachable_states
+                ):
+                    reachable_states.add(transition["dest"])
+                    states_to_check.append(transition["dest"])
 
         return False
-    
 
     def _get_triggers(self, state: str) -> list:
         """
@@ -105,11 +116,10 @@ class FSMGenerator:
         triggers = []
 
         for transition in self.transitions:
-            if transition['source'] == state:
-                triggers.append(transition['trigger'])
+            if transition["source"] == state:
+                triggers.append(transition["trigger"])
 
         return triggers
-    
 
     def _add_leftover_transitions(self) -> None:
         """
@@ -117,17 +127,20 @@ class FSMGenerator:
         """
         for state in self.states:
             current_triggers = [trigger[0] for trigger in self._get_triggers(state)]
-            available_triggers = [event for event in self.events if event not in current_triggers]
+            available_triggers = [
+                event for event in self.events if event not in current_triggers
+            ]
 
             for trigger in available_triggers:
                 dest = random.choice(self.states)
 
-                self.transitions.append({
-                    'trigger': trigger + ' / ' + random.choice(self.outputs),
-                    'source': state,
-                    'dest': dest
-                })
-        
+                self.transitions.append(
+                    {
+                        "trigger": trigger + " / " + random.choice(self.outputs),
+                        "source": state,
+                        "dest": dest,
+                    }
+                )
 
     def _ensure_connected_machine(self) -> bool:
         """
@@ -142,20 +155,27 @@ class FSMGenerator:
                     continue
 
                 if not self._is_reachable_from(state, target):
-                    current_triggers = [trigger[0] for trigger in self._get_triggers(state)]
-                    available_triggers = [event for event in self.events if event not in current_triggers]
+                    current_triggers = [
+                        trigger[0] for trigger in self._get_triggers(state)
+                    ]
+                    available_triggers = [
+                        event for event in self.events if event not in current_triggers
+                    ]
 
                     if not available_triggers:
                         return False
-                    
-                    self.transitions.append({
-                        'trigger': available_triggers[0] + ' / ' + random.choice(self.outputs),
-                        'source': state,
-                        'dest': target
-                    })
+
+                    self.transitions.append(
+                        {
+                            "trigger": available_triggers[0]
+                            + " / "
+                            + random.choice(self.outputs),
+                            "source": state,
+                            "dest": target,
+                        }
+                    )
 
         return True
-    
 
     def _find_1_equivalent(self) -> dict[str, set]:
         """
@@ -172,47 +192,46 @@ class FSMGenerator:
             io_string = ""
             for trigger in triggers:
                 io_string += f"{trigger},"
-            
+
             io_list = io_string.split(",")
             io_list.sort()
             io_string = "".join(io_list)
 
             if io_string not in equivalence_sets.keys():
                 equivalence_sets[io_string] = set()
-                
+
             equivalence_sets[io_string].add(state)
 
         return equivalence_sets
-    
 
     def _get_dest_from_trigger(self, source: str, trigger: str) -> str:
         """
         Get the destination state from a given source state and trigger.
-        
+
         Args:
             source (str): The source state of the transition.
             trigger (str): The trigger of the transition.
-            
+
         Returns:
             str: The destination state of the transition.
         """
-        
-        for transition in self.transitions:
-            if transition['source'] == source and transition['trigger'] == trigger:
-                return transition['dest']
-            
-        #return None
-        raise LookupError(f"No valid transition found for state '{source}' with trigger '{trigger}'")
-    
 
-    def _get_transitions(self, source: str=None, dest: str=None) -> list:
+        for transition in self.transitions:
+            if transition["source"] == source and transition["trigger"] == trigger:
+                return transition["dest"]
+
+        raise LookupError(
+            f"No valid transition found for state '{source}' with trigger '{trigger}'"
+        )
+
+    def _get_transitions(self, source: str = None, dest: str = None) -> list:
         """
         Get transitions from the machine.
-        
+
         Args:
             source (str): The source state of the transition.
             dest (str): The destination state of the transition.
-            
+
         Returns:
             list: A list of transitions.
         """
@@ -220,17 +239,16 @@ class FSMGenerator:
 
         for transition in self.transitions:
             if source and dest:
-                if transition['source'] == source and transition['dest'] == dest:
+                if transition["source"] == source and transition["dest"] == dest:
                     transitions.append(transition)
             elif source:
-                if transition['source'] == source:
+                if transition["source"] == source:
                     transitions.append(transition)
             elif dest:
-                if transition['dest'] == dest:
+                if transition["dest"] == dest:
                     transitions.append(transition)
 
         return transitions
-
 
     def _find_equivalent_states(self) -> list[set]:
         """
@@ -270,10 +288,12 @@ class FSMGenerator:
 
                         if subset_pointer not in current_equivalence_dict.keys():
                             current_equivalence_dict[subset_pointer] = set()
-                    
+
                         current_equivalence_dict[subset_pointer].add(state)
-                                                    
-                if sorted(current_equivalence_dict.values()) == sorted(previous_equivalence_dict.values()):
+
+                if sorted(current_equivalence_dict.values()) == sorted(
+                    previous_equivalence_dict.values()
+                ):
                     break
 
                 previous_equivalence_dict = current_equivalence_dict
@@ -284,7 +304,6 @@ class FSMGenerator:
                 equivalent_states.append(eq_set)
 
         return equivalent_states
-
 
     def _make_minimal(self) -> None:
         """
@@ -308,7 +327,6 @@ class FSMGenerator:
 
                 self.states.remove(state)
 
-
     def _cleanup_transitions(self) -> None:
         """
         Remove duplicate transitions from the machine.
@@ -320,7 +338,6 @@ class FSMGenerator:
 
         self.transitions = transitions
 
-
     def save(self, filename: str) -> None:
         """
         Save the machine to a pickle file.
@@ -328,8 +345,7 @@ class FSMGenerator:
         Args:
             filename (str): The name of the pickle file.
         """
-        pickle.dump(self, open(filename, 'wb'))
-
+        pickle.dump(self, open(filename, "wb"))
 
     def draw(self, filename: str, title: str = None) -> None:
         """
@@ -341,13 +357,12 @@ class FSMGenerator:
             title (str): The title of the graph.
         """
         Path("fsm_imgs").mkdir(parents=True, exist_ok=True)
-        self.machine.draw_graph(title).draw(f"fsm_imgs/{filename}", prog='dot')
-
+        self.machine.draw_graph(title).draw(f"fsm_imgs/{filename}", prog="dot")
 
     def apply_input_sequence(self, state: str, sequence: str) -> tuple[str]:
         """
         Apply an input sequence to the machine.
-        
+
         Args:
             state (str): The state to start from.
             sequence (str): The input sequence to apply.
@@ -361,9 +376,11 @@ class FSMGenerator:
             if event not in self.events:
                 raise ValueError(f"Invalid event: '{event}' in sequence.")
             for transition in self.transitions:
-                if transition['source'] == state and transition['trigger'].startswith(event):
-                    output_seq.append(transition['trigger'].split(" / ")[1])
-                    state = transition['dest']
+                if transition["source"] == state and transition["trigger"].startswith(
+                    event
+                ):
+                    output_seq.append(transition["trigger"].split(" / ")[1])
+                    state = transition["dest"]
                     break
 
         return state, tuple(output_seq)
