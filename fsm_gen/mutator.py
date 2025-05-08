@@ -9,9 +9,16 @@ from fsm_gen.machine import Machine
 """
 A class to apply different types of mutations to a given FSM.
 """
+
+
 class Mutator:
     DEBUG = False
-    MUTATION_TYPES = ['add_state', 'remove_state', 'change_trigger_output', 'change_trans_dest']
+    MUTATION_TYPES = [
+        "add_state",
+        "remove_state",
+        "change_trigger_output",
+        "change_trans_dest",
+    ]
 
     def __init__(self, fsm: FSMGenerator) -> None:
         """
@@ -20,11 +27,9 @@ class Mutator:
         Args:
             fsm (FSMGenerator): the (unmutated) FSM to apply mutations to.
         """
-        self.fsm = fsm
-        # self.num_mutations = int(0.4 * len(self.fsm.states))
+        self.fsm = copy.deepcopy(fsm)
         self.num_mutations = 1
         self.mutations_applied = []
-
 
     def create_mutated_fsm(self):
         """
@@ -34,12 +39,15 @@ class Mutator:
             Machine: The mutated FSM
         """
         self._mutate()
-        self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
-                                   graph_engine="pygraphviz", auto_transitions=False,
-                                   transitions=self.fsm.transitions)
-        
-        return self.fsm
+        self.fsm.machine = Machine(
+            states=self.fsm.states,
+            initial=self.fsm.states[0],
+            graph_engine="pygraphviz",
+            auto_transitions=False,
+            transitions=self.fsm.transitions,
+        )
 
+        return self.fsm
 
     def _mutate(self):
         """
@@ -50,18 +58,18 @@ class Mutator:
             mutation = random.choice(self.MUTATION_TYPES)
 
             match mutation:
-                case 'add_state':
+                case "add_state":
                     self._add_state()
-                case 'remove_state':
+                case "remove_state":
                     self._remove_state()
-                case 'change_trigger_output':
+                case "change_trigger_output":
                     self._change_trigger_output()
-                case 'change_trans_dest':
+                case "change_trans_dest":
                     self._change_trans_dest()
 
             # Ensure connectivity after each mutation (and apply change trigger output as a fallback)
             if not self._check_connectivity():
-                self.fsm = original_fsm
+                self.fsm = copy.deepcopy(original_fsm)
                 self._change_trigger_output()
 
         if self.DEBUG:
@@ -70,48 +78,56 @@ class Mutator:
                 print(f"\t{mutation}")
             self.get_machine_properties()
 
-    
     def _add_state(self):
         """
         Add a new state to a FSM and ensure it is connected to other states in the system.
         """
         # Get random source state and transition
         source_state = random.choice(self.fsm.states)
-        source_state_trans = random.choice([t for t in self.fsm.transitions if t["source"] == source_state])
+        source_state_trans = random.choice(
+            [t for t in self.fsm.transitions if t["source"] == source_state]
+        )
 
         # Create new state
         last_state_num = self.fsm.states[-1][1:]
-        new_state = f'S{int(last_state_num) + 1}'
+        new_state = f"S{int(last_state_num) + 1}"
         self.fsm.states.append(new_state)
 
         # Add new transition from new state to dest of source_state
         # Modify source_state transition to point to new state
         used_event = random.choice(self.fsm.events)
-        self.fsm.transitions.append({
-            "source": new_state,
-            "trigger": used_event + ' / ' + str(random.randint(0, 1)),
-            "dest": source_state_trans["dest"]
-        })
+        self.fsm.transitions.append(
+            {
+                "source": new_state,
+                "trigger": used_event + " / " + str(random.randint(0, 1)),
+                "dest": source_state_trans["dest"],
+            }
+        )
         source_state_trans["dest"] = new_state
 
         # Add transitions from new state to other states for remaining events
         for event in self.fsm.events:
             if event != used_event:
-                self.fsm.transitions.append({
-                    "source": new_state,
-                    "trigger": event + ' / ' + str(random.randint(0, 1)),
-                    "dest": random.choice(self.fsm.states)
-                })
+                self.fsm.transitions.append(
+                    {
+                        "source": new_state,
+                        "trigger": event + " / " + str(random.randint(0, 1)),
+                        "dest": random.choice(self.fsm.states),
+                    }
+                )
 
-        self.mutations_applied.append(f"Added state {new_state} using {source_state_trans}")
-    
+        self.mutations_applied.append(
+            f"Added state {new_state} using {source_state_trans}"
+        )
 
     def _remove_state(self):
         """
         Remove a state from a FSM and reroute/delete its associated transitions.
         """
         # Ensure initial state cannot be removed
-        states_to_check = [state for state in self.fsm.states if state not in self.fsm.states[0]]
+        states_to_check = [
+            state for state in self.fsm.states if state not in self.fsm.states[0]
+        ]
         state_found = False
 
         # Store original states and transitions in case the machine needs to be reverted
@@ -119,18 +135,26 @@ class Mutator:
         original_transitions = copy.deepcopy(self.fsm.transitions)
         original_fsm = copy.deepcopy(self.fsm)
 
-        while len(states_to_check) != 0 and not state_found:
+        while len(states_to_check) != 0 and state_found == False:
             state_to_remove = random.choice(states_to_check)
 
             # Only remove states if they have equal or more incoming transitions as outgoing transitions
-            if self._get_num_transitions_exclude_loops(state_to_remove, True) >= self._get_num_transitions_exclude_loops(state_to_remove, False):
-                outgoing_state_trans = [t for t in self.fsm.transitions if t["source"] == state_to_remove]
-                incoming_state_trans = [t for t in self.fsm.transitions if t["dest"] == state_to_remove]
+            if self._get_num_transitions_exclude_loops(
+                state_to_remove, True
+            ) >= self._get_num_transitions_exclude_loops(state_to_remove, False):
+                outgoing_state_trans = [
+                    t for t in self.fsm.transitions if t["source"] == state_to_remove
+                ]
+                incoming_state_trans = [
+                    t for t in self.fsm.transitions if t["dest"] == state_to_remove
+                ]
 
                 # Remove all outgoing transitions, but store their destination states to ensure they can still be reached
                 dest_states = []
                 for transition in outgoing_state_trans:
-                    self.fsm.transitions = [t for t in self.fsm.transitions if t != transition]
+                    self.fsm.transitions = [
+                        t for t in self.fsm.transitions if t != transition
+                    ]
                     if transition["dest"] != state_to_remove:
                         dest_states.append(transition["dest"])
 
@@ -144,7 +168,13 @@ class Mutator:
                         transition["dest"] = dest_state
                         dest_states = dest_states[1:]
                     else:
-                        dest_state = random.choice([state for state in self.fsm.states if state != transition["source"]])
+                        dest_state = random.choice(
+                            [
+                                state
+                                for state in self.fsm.states
+                                if state != transition["source"]
+                            ]
+                        )
                         transition["dest"] = dest_state
 
                 # Check that connectivity is maintained when this state is removed
@@ -155,36 +185,37 @@ class Mutator:
                     self.fsm = original_fsm
                     self.fsm.states = original_states[:]
                     self.fsm.transitions = original_transitions[:]
-                    self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
-                                               graph_engine="pygraphviz", auto_transitions=False,
-                                               transitions=self.fsm.transitions)
+                    self.fsm.machine = Machine(
+                        states=self.fsm.states,
+                        initial=self.fsm.states[0],
+                        graph_engine="pygraphviz",
+                        auto_transitions=False,
+                        transitions=self.fsm.transitions,
+                    )
                     states_to_check.remove(state_to_remove)
             else:
                 states_to_check.remove(state_to_remove)
-
-        # Apply different mutation type if a state cannot be removed
-        if not state_found:
-            alternative_mutations = [self._change_trans_dest, self._change_trigger_output]
-            alternative_mutation_choice = random.choice([0,1])
-            alternative_mutations[alternative_mutation_choice]()
-
 
     def _change_trigger_output(self):
         """
         Alter the output of a random transition to an opposite value (0 -> 1, 1 -> 0).
         """
         transition = random.choice(self.fsm.transitions)
-        while f"Changed trigger output of transition {transition}" in self.mutations_applied:
-            transition = random.choice(self.fsm.transitions)
-        transition_trigger = transition["trigger"].split(' / ')
-        transition["trigger"] = f'{transition_trigger[0]} / {1 - int(transition_trigger[1])}'
+        transition_trigger = transition["trigger"].split(" / ")
 
-        self.mutations_applied.append(f"Changed trigger output of transition {transition}")
+        new_output = random.choice(self.fsm.outputs)
+        while new_output == transition_trigger[1]:
+            new_output = random.choice(self.fsm.outputs)
 
+        transition["trigger"] = f"{transition_trigger[0]} / {new_output}"
+
+        self.mutations_applied.append(
+            f"Changed trigger output of transition {transition}"
+        )
 
     def _get_num_transitions_exclude_loops(self, state: str, incoming: bool) -> int:
         """
-        Retrieve the number of transitions coming into or going out of a state (whilst ignoring those 
+        Retrieve the number of transitions coming into or going out of a state (whilst ignoring those
         that trigger loops within the same state).
 
         Args:
@@ -199,25 +230,21 @@ class Mutator:
         for transition in self.fsm.transitions:
             if incoming:
                 if transition["dest"] == state and transition["source"] != state:
-                    num_trans +=1
+                    num_trans += 1
             else:
                 if transition["source"] == state and transition["dest"] != state:
                     num_trans += 1
 
         return num_trans
 
-    
     def _change_trans_dest(self):
         """
         Alter the destination of a random transition within the FSM (whilst ensuring the FSM stays totally connected).
         """
-        original_transitions = copy.deepcopy(self.fsm.transitions)
-        original_fsm = copy.deepcopy(self.fsm)
-
         transition = random.choice(self.fsm.transitions)
 
         # Ensures FSM is connected still (and avoid applying mutation to already mutated transitions)
-        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2 or f"Changed destination of transition {transition}" in self.mutations_applied:
+        while self._get_num_transitions_exclude_loops(transition["dest"], True) < 2:
             transition = random.choice(self.fsm.transitions)
 
         # Make sure random destination state cannot be the same state as original destination
@@ -226,19 +253,7 @@ class Mutator:
             random_dest = random.choice(self.fsm.states)
         transition["dest"] = random_dest
 
-        # Don't apply mutation if connectivity is lost
-        if self._check_connectivity():
-            self.mutations_applied.append(f"Changed destination of transition {transition}")
-        else:
-            self.fsm = original_fsm
-            self.fsm.transitions = original_transitions[:]
-            self.fsm.machine = Machine(states=self.fsm.states, initial=self.fsm.states[0],
-                                       graph_engine="pygraphviz", auto_transitions=False,
-                                       transitions=self.fsm.transitions)
-            alternative_mutations = [self._change_trigger_output, self._change_trans_dest]
-            alternative_mutation_choice = random.choice([0,1])
-            alternative_mutations[alternative_mutation_choice]()
-
+        self.mutations_applied.append(f"Changed destination of transition {transition}")
 
     def _check_determinism(self) -> bool:
         """
@@ -249,12 +264,11 @@ class Mutator:
         """
         for state in self.fsm.states:
             transitions = [t for t in self.fsm.transitions if t["source"] == state]
-            triggers = [t["trigger"].split(' / ')[0] for t in transitions]
+            triggers = [t["trigger"].split(" / ")[0] for t in transitions]
             if len(triggers) != len(set(triggers)):
                 return False
-            
-        return True
 
+        return True
 
     def _check_connectivity(self) -> bool:
         """
@@ -263,6 +277,7 @@ class Mutator:
         Returns:
             bool: Whether or not the machine is connected.
         """
+
         def dfs(start_state):
             visited = set()
             stack = [start_state]
@@ -271,15 +286,15 @@ class Mutator:
                 if state not in visited:
                     visited.add(state)
                     for transition in self.fsm.transitions:
-                        if transition['source'] == state:
-                            stack.append(transition['dest'])
+                        if transition["source"] == state:
+                            stack.append(transition["dest"])
             return visited
 
         all_states = set(self.fsm.states)
         for state in self.fsm.states:
             if dfs(state) != all_states:
                 return False
-            
+
         return True
 
     def get_machine_properties(self):

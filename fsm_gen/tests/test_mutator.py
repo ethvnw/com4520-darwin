@@ -1,3 +1,6 @@
+import os
+import pickle
+
 import pytest
 import collections
 import random
@@ -5,18 +8,20 @@ import pickle
 import os
 import re
 from fsm_gen.generator import FSMGenerator
-from fsm_gen.machine import Machine
 from fsm_gen.mutator import Mutator
 
+
 @pytest.fixture
-def testing_fsm():
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+def sample_fsm():
+    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     fsm.draw("original.png")
     return fsm
+
 
 @pytest.fixture
 def mutator(testing_fsm):
     return Mutator(testing_fsm)
+
 
 @pytest.fixture
 def mutated_fsm(mutator):
@@ -116,3 +121,33 @@ def cleanup():
     for file in ["original.png", "mutated.png", "mutated.pkl"]:
         if os.path.exists(file):
             os.remove(file)
+
+## mutator ##
+# add state #
+# remove state # 
+# change trigger output # 
+# change transition destination # 
+
+## all mutator functions ##
+
+# create_mutated_fsm() # done
+
+# _mutate() # done
+
+# _add_state() # done
+
+# _remove_state() # done
+
+# _change_trigger_output() # done
+
+# _get_num_transitions_exclude_loops() ?
+
+# _change_trans_dest() # done
+
+# _check determinism() # tested elsewhere
+
+# _check connectivity() # tested elsewhere
+
+    # dfs() # tested elsewhere
+
+# get_machine_properties() # only prints previous 2 function outputs

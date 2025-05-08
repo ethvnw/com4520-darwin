@@ -1,5 +1,6 @@
 from transitions.extensions import GraphMachine
 
+
 class Machine(GraphMachine):
     style_attributes = {
         "node": {
@@ -21,7 +22,10 @@ class Machine(GraphMachine):
             "active": {"color": "red", "fillcolor": "darksalmon", "peripheries": "2"},
             "previous": {"color": "blue", "fillcolor": "azure", "peripheries": "1"},
         },
-        "edge": {"default": {"color": "black"}, "previous": {"color": "blue"}},
+        "edge": {
+            "default": {"color": "black", "fontname": "Noto Color Emoji"},
+            "previous": {"color": "blue"},
+        },
         "graph": {
             "default": {"color": "black", "fillcolor": "white", "style": "solid"},
             "previous": {"color": "blue", "fillcolor": "azure", "style": "filled"},
@@ -33,9 +37,9 @@ class Machine(GraphMachine):
     def draw_graph(self, title=None):
         graph = self.get_graph(title=title)
         self._add_initial_state_arrow(graph)
-        graph.graph_attr['label'] = title if title else ""
+        graph.graph_attr["label"] = title if title else ""
         return graph
-    
+
     def _add_initial_state_arrow(self, graph):
-        graph.add_node('initial', style='invis', width='0', shape='point')
-        graph.add_edge('initial', self.initial, style='solid')
+        graph.add_node("initial", style="invis", width="0", shape="point")
+        graph.add_edge("initial", self.initial, style="solid")

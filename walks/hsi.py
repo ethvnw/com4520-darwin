@@ -7,7 +7,7 @@ from fsm_gen.generator import FSMGenerator
 def _find_shortest_path(fsm: FSMGenerator, end: str) -> list:
     """
     Find the shortest path from the initial state to the end state.
-    
+
     Args:
         fsm (FSMGenerator): the FSM to find the shortest path in
         end (str): the end state
@@ -39,7 +39,7 @@ def _generate_state_cover(fsm: FSMGenerator) -> dict[str, list[str]]:
 
     Args:
         fsm (FSMGenerator): the FSM to generate the state cover for
-    
+
     Returns:
         dict: the state cover for the FSM
     """
@@ -52,25 +52,25 @@ def _generate_state_cover(fsm: FSMGenerator) -> dict[str, list[str]]:
 
 
 def _generate_transition_cover(fsm: FSMGenerator) -> set[str]:
-        """
-        Generate the transition cover for the FSM.
-        
-        Returns:
-            set: the transition cover for the FSM
-        """
-        state_cover = _generate_state_cover(fsm)
-        transition_cover = set()
+    """
+    Generate the transition cover for the FSM.
 
-        for state in fsm.states:
-            transitions = fsm._get_transitions(source=state)
-            for transition in transitions:
-                inp = transition["trigger"].split(" / ")[0]
-                transition_cover.add(''.join(state_cover[state] + [inp]))
+    Returns:
+        set: the transition cover for the FSM
+    """
+    state_cover = _generate_state_cover(fsm)
+    transition_cover = set()
 
-        return transition_cover
+    for state in fsm.states:
+        transitions = fsm._get_transitions(source=state)
+        for transition in transitions:
+            inp = transition["trigger"].split(" / ")[0]
+            transition_cover.add("".join(state_cover[state] + [inp]))
+
+    return transition_cover
 
 
-def _generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[str]]:
+def generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[str]]:
     """
     Generate a harmonised set of state identifiers for the FSM.
 
@@ -83,10 +83,16 @@ def _generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[s
     """
     max_len = 5
     state_identifiers = defaultdict(set)
-    state_pairs = [(s1, s2) for i, s1 in enumerate(fsm.states) for s2 in fsm.states[i+1:]]
-    test_sequences = [''.join(seq) for length in range(1, max_len + 1) for seq in itertools.product(fsm.events, repeat=length)]
-    
-    separating_sequences = {}  # Dictionary to store a harmonised separating sequence for each pair
+    state_pairs = [
+        (s1, s2) for i, s1 in enumerate(fsm.states) for s2 in fsm.states[i + 1 :]
+    ]
+    test_sequences = [
+        "".join(seq)
+        for length in range(1, max_len + 1)
+        for seq in itertools.product(fsm.events, repeat=length)
+    ]
+
+    separating_sequences = {}
 
     for s1, s2 in state_pairs:
         for seq in test_sequences:
@@ -105,7 +111,9 @@ def _generate_harmonised_state_identifiers(fsm: FSMGenerator) -> dict[str, set[s
     return state_identifiers
 
 
-def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
+def generate_HSI_suite(
+    fsm: FSMGenerator, state_identifiers: dict[str, set[str]]
+) -> dict[str, tuple[str]]:
     """
     Generate the HSI test set for the FSM using the HSI method.
 
@@ -115,7 +123,6 @@ def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
     Returns:
         set: The HSI test set for the FSM.
     """
-    state_identifiers = _generate_harmonised_state_identifiers(fsm)
     transition_cover = _generate_transition_cover(fsm)
     hsi_test_set = defaultdict(tuple)
 
@@ -123,9 +130,11 @@ def generate_HSI_suite(fsm: FSMGenerator) -> dict[str, tuple[str]]:
         for state, identifiers in state_identifiers.items():
             for identifer in identifiers:
                 sequence = seq + identifer
-                hsi_test_set[sequence] = fsm.apply_input_sequence(fsm.machine.initial, sequence)[1]
+                hsi_test_set[sequence] = fsm.apply_input_sequence(
+                    fsm.machine.initial, sequence
+                )[1]
 
-    # remove all keys that are prefixes of other keys
+    # Remove all keys that are prefixes of other keys
     keys = list(hsi_test_set.keys())
     for i, key in enumerate(keys):
         for j in range(i + 1, len(keys)):
