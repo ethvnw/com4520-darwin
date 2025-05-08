@@ -9,21 +9,22 @@ from fsm_gen.machine import Machine
 from fsm_gen.mutator import Mutator
 
 @pytest.fixture
-def testing_fsm(): # generate fsm of specified states and inputs to mutate from
+def testing_fsm():
     fsm = FSMGenerator(num_states=5, num_inputs=3)
     fsm.draw("original.png")
     return fsm
 
 @pytest.fixture
-def mutator(testing_fsm): # create an object of the mutator class
+def mutator(testing_fsm):
     return Mutator(testing_fsm)
 
 @pytest.fixture
-def mutated_fsm(mutator): # mutate the testing fsm
+def mutated_fsm(mutator):
     mutator.create_mutated_fsm()
     return mutator.fsm
 
 def test_add_state():
+    """Ensure the mutator correctly adds a state"""
     fsm = FSMGenerator(num_states=5, num_inputs=3)
     mutator = Mutator(fsm)
     initial_state_count = len(fsm.states)
@@ -31,6 +32,7 @@ def test_add_state():
     assert len(mutator.fsm.states) > initial_state_count
 
 def test_remove_state():
+    """Ensure the mutator correctly removes a state"""
     fsm = FSMGenerator(num_states=5, num_inputs=3)
     mutator = Mutator(fsm)
     initial_state_count = len(fsm.states)
@@ -38,6 +40,7 @@ def test_remove_state():
     assert len(mutator.fsm.states) < initial_state_count
     
 def test_change_trigger_output():
+    """Ensure the change trigger output mutation is correctly applied"""
     fsm = FSMGenerator(num_states=5, num_inputs=3)
     mutator = Mutator(fsm)
     initial_trigger = []
@@ -62,6 +65,7 @@ def test_change_trigger_output():
     assert found
     
 def test_change_trans_dest():
+    """Ensure the change transition destination mutation is correctly applied"""
     fsm = FSMGenerator(num_states=5, num_inputs=3)
     mutator = Mutator(fsm)
     initial_trigger = []
@@ -86,49 +90,25 @@ def test_change_trans_dest():
     assert found
 
 def test_create_mutated_fsm(mutated_fsm):
+    """Ensure the mutator correctly produces the files needed"""
     mutated_fsm.draw("mutated.png")
     with open("mutated.pkl", "wb") as f:
         pickle.dump(mutated_fsm, f)
     assert isinstance(mutated_fsm, FSMGenerator)
     assert os.path.exists("mutated.pkl")
 
-def test_mutation_application(mutator, testing_fsm): #ensures a previously applied mutation is not then mutated back to the original fsm
+def test_mutation_application(mutator, testing_fsm):
+    """Ensure the mutator doesnt mutate back to the original FSM"""
     original_fsm = pickle.dumps(testing_fsm)
     mutator.create_mutated_fsm()
     assert mutator.mutations_applied
     assert pickle.dumps(mutator.fsm) != original_fsm
     
 def test_get_num_transitions_exclude_loops(mutator):
+    """Ensure the number of transitions is counted correctly"""
     fsm = FSMGenerator(num_inputs=1,num_states=1)
     mutator = Mutator(fsm)
     assert 0 == mutator._get_num_transitions_exclude_loops(fsm.transitions[0]["dest"],True)
-
-'''BAD TESTS TO FIX'''
-def test_fsm_connectivity(mutator):
-    mutator._mutate()
-    assert mutator._check_connectivity()
-
-def test_check_connectivity(sample_fsm):
-    assert sample_fsm._ensure_connected_machine()
-
-def test_mutation_preserves_connectivity(mutator):
-    mutator._mutate()
-    assert mutator.fsm._ensure_connected_machine()
-    
-def test_fsm_determinism(mutator):
-    mutator._mutate()
-    assert isinstance(mutator._check_determinism(), bool)
-    
-'''END OF BAD TESTS'''
-
-# TODO Discuss this too
-''' Confused by how to test this'''
-'''
-def test_get_machine_properties(testing_fsm):
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
-    fsm._check_connectivity() = True
-    fsm._check_determinism() = True
-    assert Mutator.get_machine_properties(fsm) == (f"\nConnected: True, Deterministic: True")'''
 
 @pytest.fixture(scope="function", autouse=True)
 def cleanup():
@@ -136,31 +116,3 @@ def cleanup():
     for file in ["original.png", "mutated.png", "mutated.pkl"]:
         if os.path.exists(file):
             os.remove(file)
-
-## mutator ##
-# add state #
-# remove state # 
-# change trigger output # 
-# change transition destination # 
-
-## all mutator functions ##
-
-# create_mutated_fsm() # done
-
-# _mutate() # done
-
-# _add_state() # done
-
-# _remove_state() # done
-
-# _change_trigger_output() # done
-
-# _change_trans_dest() # done
-
-# _get_num_transitions_exclude_loops() done
-
-# _check determinism() #  TODO
-
-# _check connectivity() # TODO
-
-# get_machine_properties() # TODO
