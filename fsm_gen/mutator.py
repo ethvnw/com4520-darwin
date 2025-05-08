@@ -212,6 +212,7 @@ class Mutator:
         self.mutations_applied.append(
             f"Changed trigger output of transition {transition}"
         )
+        return transition
 
     def _get_num_transitions_exclude_loops(self, state: str, incoming: bool) -> int:
         """
@@ -254,6 +255,8 @@ class Mutator:
         transition["dest"] = random_dest
 
         self.mutations_applied.append(f"Changed destination of transition {transition}")
+        return transition
+
 
     def _check_determinism(self) -> bool:
         """

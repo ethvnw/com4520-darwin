@@ -12,7 +12,7 @@ from fsm_gen.mutator import Mutator
 
 
 @pytest.fixture
-def sample_fsm():
+def testing_fsm():
     fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     fsm.draw("original.png")
     return fsm
@@ -30,7 +30,7 @@ def mutated_fsm(mutator):
 
 def test_add_state():
     """Ensure the mutator correctly adds a state"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     mutator = Mutator(fsm)
     initial_state_count = len(fsm.states)
     mutator._add_state()
@@ -38,61 +38,41 @@ def test_add_state():
 
 def test_remove_state():
     """Ensure the mutator correctly removes a state"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     mutator = Mutator(fsm)
     initial_state_count = len(fsm.states)
     mutator._remove_state()
     assert len(mutator.fsm.states) < initial_state_count
     
+
+
+
+
 def test_change_trigger_output():
     """Ensure the change trigger output mutation is correctly applied"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    fsm = FSMGenerator(num_states=5, num_inputs=3,num_outputs=2)
     mutator = Mutator(fsm)
-    initial_trigger = []
-    initial_source = []
-    initial_dest = []
-    found = False
-    for i in range(0,len(fsm.transitions)):
-        initial_trigger.append(fsm.transitions[i]["trigger"])
-        initial_source.append(fsm.transitions[i]["source"])
-        initial_dest.append(fsm.transitions[i]["dest"])
-    print(fsm.transitions)
-    mutator._change_trigger_output()
-    print(fsm.transitions)
-    for i in range(0,len(fsm.transitions)):
-        for j in range(0,len(fsm.transitions)):
-            if fsm.transitions[i]["dest"] == initial_dest[j] and fsm.transitions[i]["source"] == initial_source[j]:
-                if fsm.transitions[i]["trigger"] != initial_trigger[j]:
-                    found = True
-                    break
-        if found == True:
-            break
-    assert found
-    
+
+    initial_triggers = [t["trigger"] for t in fsm.transitions]
+    mutated = mutator._change_trigger_output()
+
+    assert not(mutated["trigger"] not in initial_triggers)
+
 def test_change_trans_dest():
     """Ensure the change transition destination mutation is correctly applied"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3)
+    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
     mutator = Mutator(fsm)
-    initial_trigger = []
-    initial_source = []
-    initial_dest = []
-    found = False
-    for i in range(0,len(fsm.transitions)):
-        initial_trigger.append(fsm.transitions[i]["trigger"])
-        initial_source.append(fsm.transitions[i]["source"])
-        initial_dest.append(fsm.transitions[i]["dest"])
-    print(fsm.transitions)
-    mutator._change_trans_dest()
-    print(fsm.transitions)
-    for i in range(0,len(fsm.transitions)):
-        for j in range(0,len(fsm.transitions)):
-            if fsm.transitions[i]["trigger"] == initial_trigger[j] and fsm.transitions[i]["source"] == initial_source[j]:
-                if fsm.transitions[i]["dest"] != initial_dest[j]:
-                    found = True
-                    break
-        if found == True:
+
+    original_transitions = [dict(t) for t in fsm.transitions]
+    mutated_transition = mutator._change_trans_dest()
+
+    for original in original_transitions:
+        if (original["trigger"] == mutated_transition["trigger"] and
+            original["source"] == mutated_transition["source"]):
+            assert original["dest"] != mutated_transition["dest"]
             break
-    assert found
+    else:
+        assert False
 
 def test_create_mutated_fsm(mutated_fsm):
     """Ensure the mutator correctly produces the files needed"""
@@ -111,7 +91,7 @@ def test_mutation_application(mutator, testing_fsm):
     
 def test_get_num_transitions_exclude_loops(mutator):
     """Ensure the number of transitions is counted correctly"""
-    fsm = FSMGenerator(num_inputs=1,num_states=1)
+    fsm = FSMGenerator(num_inputs=1,num_states=1, num_outputs=2)
     mutator = Mutator(fsm)
     assert 0 == mutator._get_num_transitions_exclude_loops(fsm.transitions[0]["dest"],True)
 
