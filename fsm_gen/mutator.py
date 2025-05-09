@@ -31,7 +31,7 @@ class Mutator:
         self.num_mutations = 1
         self.mutations_applied = []
 
-    def create_mutated_fsm(self):
+    def create_mutated_fsm(self) -> FSMGenerator:
         """
         Apply mutations to a given finite state machine, store the result and render the mutated FSM.
 
@@ -198,21 +198,18 @@ class Mutator:
 
     def _change_trigger_output(self):
         """
-        Alter the output of a random transition to an opposite value (0 -> 1, 1 -> 0).
+        Alter the output of a random transition to a different output symbol.
         """
         transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(" / ")
 
-        new_output = random.choice(self.fsm.outputs)
-        while new_output == transition_trigger[1]:
-            new_output = random.choice(self.fsm.outputs)
+        new_output = random.choice([out for out in self.fsm.outputs if out != transition_trigger[1]])
 
         transition["trigger"] = f"{transition_trigger[0]} / {new_output}"
 
         self.mutations_applied.append(
             f"Changed trigger output of transition {transition}"
         )
-        return transition
 
     def _get_num_transitions_exclude_loops(self, state: str, incoming: bool) -> int:
         """
@@ -255,8 +252,6 @@ class Mutator:
         transition["dest"] = random_dest
 
         self.mutations_applied.append(f"Changed destination of transition {transition}")
-        return transition
-
 
     def _check_determinism(self) -> bool:
         """

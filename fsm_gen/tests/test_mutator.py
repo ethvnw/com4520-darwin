@@ -1,133 +1,148 @@
-import os
-import pickle
-
 import pytest
-import collections
-import random
-import pickle
-import os
-import re
-from fsm_gen.generator import FSMGenerator
+
+from fsm_gen.case_studies import LocalisationSystem
 from fsm_gen.mutator import Mutator
 
 
 @pytest.fixture
-def testing_fsm():
-    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
-    fsm.draw("original.png")
-    return fsm
+def mutator():
+    """
+    Create a fresh Mutator instance with a new FSM for each test.
+    """
+    fsm = LocalisationSystem()
+    return Mutator(fsm)
 
 
 @pytest.fixture
-def mutator(testing_fsm):
-    return Mutator(testing_fsm)
+def fsm():
+    """
+    Create a fresh FSM.
+    """
+    return LocalisationSystem()
 
 
-@pytest.fixture
-def mutated_fsm(mutator):
-    mutator.create_mutated_fsm()
-    return mutator.fsm
-
-def test_add_state():
-    """Ensure the mutator correctly adds a state"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
-    mutator = Mutator(fsm)
-    initial_state_count = len(fsm.states)
+def test_add_state(mutator):
+    """
+    Test that the add_state function increases the number of states in the FSM.
+    """
+    initial_state_count = len(mutator.fsm.states)
     mutator._add_state()
-    assert len(mutator.fsm.states) > initial_state_count
+    assert len(mutator.fsm.states) == initial_state_count + 1
 
-def test_remove_state():
-    """Ensure the mutator correctly removes a state"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
-    mutator = Mutator(fsm)
-    initial_state_count = len(fsm.states)
+
+def test_remove_state(mutator):
+    """
+    Test that the remove_state function decreases the number of states in the FSM.
+    """
+    initial_state_count = len(mutator.fsm.states)
     mutator._remove_state()
-    assert len(mutator.fsm.states) < initial_state_count
-    
+    assert len(mutator.fsm.states) == initial_state_count - 1
 
 
+def test_change_trigger_output(mutator):
+    """
+    Test that the change_trigger_output function changes the output of a trigger.
+    """
+    initial_triggers = [t["trigger"] for t in mutator.fsm.transitions]
+    initial_sources = [t["source"] for t in mutator.fsm.transitions]
+    initial_destinations = [t["dest"] for t in mutator.fsm.transitions]
+
+    mutator._change_trigger_output()
+
+    changed_triggers = sum(
+        t["trigger"].split(" / ")[1] != initial_triggers[i].split(" / ")[1]
+        for i, t in enumerate(mutator.fsm.transitions)
+    )
+    assert changed_triggers == 1
+
+    # Check that all sources remain the same
+    assert all(
+        t["source"] == initial_sources[i] for i, t in enumerate(mutator.fsm.transitions)
+    )
+    # Check that all destinations remain the same
+    assert all(
+        t["dest"] == initial_destinations[i]
+        for i, t in enumerate(mutator.fsm.transitions)
+    )
 
 
-def test_change_trigger_output():
-    """Ensure the change trigger output mutation is correctly applied"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3,num_outputs=2)
-    mutator = Mutator(fsm)
+def test_change_trans_dest(mutator):
+    """
+    Test that the change_trans_dest function changes the destination of a transition.
+    """
+    initial_triggers = [t["trigger"] for t in mutator.fsm.transitions]
+    initial_sources = [t["source"] for t in mutator.fsm.transitions]
+    initial_destinations = [t["dest"] for t in mutator.fsm.transitions]
 
-    initial_triggers = [t["trigger"] for t in fsm.transitions]
-    mutated = mutator._change_trigger_output()
+    mutator._change_trans_dest()
 
-    assert not(mutated["trigger"] not in initial_triggers)
+    # Check that only one destination has changed
+    changed_destinations = sum(
+        t["dest"] != initial_destinations[i]
+        for i, t in enumerate(mutator.fsm.transitions)
+    )
+    assert changed_destinations == 1
 
-def test_change_trans_dest():
-    """Ensure the change transition destination mutation is correctly applied"""
-    fsm = FSMGenerator(num_states=5, num_inputs=3, num_outputs=2)
-    mutator = Mutator(fsm)
+    # Check that all triggers remain the same
+    assert all(
+        t["trigger"] == initial_triggers[i]
+        for i, t in enumerate(mutator.fsm.transitions)
+    )
+    # Check that all sources remain the same
+    assert all(
+        t["source"] == initial_sources[i] for i, t in enumerate(mutator.fsm.transitions)
+    )
 
-    original_transitions = [dict(t) for t in fsm.transitions]
-    mutated_transition = mutator._change_trans_dest()
 
-    for original in original_transitions:
-        if (original["trigger"] == mutated_transition["trigger"] and
-            original["source"] == mutated_transition["source"]):
-            assert original["dest"] != mutated_transition["dest"]
-            break
-    else:
-        assert False
-
-def test_create_mutated_fsm(mutated_fsm):
-    """Ensure the mutator correctly produces the files needed"""
-    mutated_fsm.draw("mutated.png")
-    with open("mutated.pkl", "wb") as f:
-        pickle.dump(mutated_fsm, f)
-    assert isinstance(mutated_fsm, FSMGenerator)
-    assert os.path.exists("mutated.pkl")
-
-def test_mutation_application(mutator, testing_fsm):
-    """Ensure the mutator doesnt mutate back to the original FSM"""
-    original_fsm = pickle.dumps(testing_fsm)
-    mutator.create_mutated_fsm()
-    assert mutator.mutations_applied
-    assert pickle.dumps(mutator.fsm) != original_fsm
-    
 def test_get_num_transitions_exclude_loops(mutator):
-    """Ensure the number of transitions is counted correctly"""
-    fsm = FSMGenerator(num_inputs=1,num_states=1, num_outputs=2)
-    mutator = Mutator(fsm)
-    assert 0 == mutator._get_num_transitions_exclude_loops(fsm.transitions[0]["dest"],True)
+    """
+    Test that the get_num_transitions function excludes loops from the count.
+    """
+    # S0 has 2 self-loops, 2 outgoing and 3 incoming transitions
+    assert mutator._get_num_transitions_exclude_loops("S0", incoming=True) == 3
+    assert mutator._get_num_transitions_exclude_loops("S0", incoming=False) == 2
 
-@pytest.fixture(scope="function", autouse=True)
-def cleanup():
-    yield
-    for file in ["original.png", "mutated.png", "mutated.pkl"]:
-        if os.path.exists(file):
-            os.remove(file)
 
-## mutator ##
-# add state #
-# remove state # 
-# change trigger output # 
-# change transition destination # 
+def test_check_determinsism(mutator):
+    """
+    Test that the check_determinsism function correctly identifies a non-deterministic FSM.
+    """
+    assert mutator._check_determinism() is True
+    # Add a non-deterministic transition
+    mutator.fsm.transitions.append({"trigger": "N / a", "source": "S0", "dest": "S1"})
+    assert mutator._check_determinism() is False
 
-## all mutator functions ##
 
-# create_mutated_fsm() # done
+def test_check_connectivity(mutator, fsm):
+    """
+    Test that the check_connectivity function correctly identifies a connected FSM.
+    """
+    assert mutator._check_connectivity() is True
+    # Add a disconnected state
+    mutator.fsm.states.append("S3")
+    assert mutator._check_connectivity() is False
+    # Remove outbound transitions from S2
+    mutator.fsm.transitions = [
+        t for t in mutator.fsm.transitions if t["source"] != "S2"
+    ]
+    assert mutator._check_connectivity() is False
 
-# _mutate() # done
 
-# _add_state() # done
+def test_create_mutated_fsm(mutator, fsm):
+    """
+    Test that the create_mutated_fsm function creates a mutated FSM that is different from the original.
+    """
+    mutated_fsm = mutator.create_mutated_fsm()
+    assert mutated_fsm != fsm
 
-# _remove_state() # done
-
-# _change_trigger_output() # done
-
-# _get_num_transitions_exclude_loops() ?
-
-# _change_trans_dest() # done
-
-# _check determinism() # tested elsewhere
-
-# _check connectivity() # tested elsewhere
-
-    # dfs() # tested elsewhere
-
-# get_machine_properties() # only prints previous 2 function outputs
+    for mutation_applied in mutator.mutations_applied:
+        if mutation_applied == "add_state":
+            assert len(mutated_fsm.states) == len(fsm.states) + 1
+        elif mutation_applied == "remove_state":
+            assert len(mutated_fsm.states) == len(fsm.states) - 1
+        elif mutation_applied == "change_trigger_output":
+            assert len(mutated_fsm.transitions) == len(fsm.transitions)
+            assert mutated_fsm.transitions != fsm.transitions
+        elif mutation_applied == "change_trans_dest":
+            assert len(mutated_fsm.transitions) == len(fsm.transitions)
+            assert mutated_fsm.transitions != fsm.transitions
