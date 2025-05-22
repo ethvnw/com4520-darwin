@@ -10,7 +10,14 @@ from walks.random_walk import RandomWalk
 FILENAME = f"results/{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
 
-def write_to_csv(state_size: int, input_size: int, output_size: int, percent: int, walk_type: RandomWalk.WalkType, result: dict) -> None:
+def write_to_csv(
+    state_size: int,
+    input_size: int,
+    output_size: int,
+    percent: int,
+    walk_type: RandomWalk.WalkType,
+    result: dict,
+) -> None:
     """
     Write the results of the walk to a CSV file.
     Args:
@@ -39,7 +46,13 @@ def write_to_csv(state_size: int, input_size: int, output_size: int, percent: in
         )
 
 
-def run_walk(state_size: int, input_size: int, output_size: int, percent: int, walk_type: RandomWalk.WalkType) -> None:
+def run_walk(
+    state_size: int,
+    input_size: int,
+    output_size: int,
+    percent: int,
+    walk_type: RandomWalk.WalkType,
+) -> None:
     """
     Run a walk on the FSM and record the results.
     Args:

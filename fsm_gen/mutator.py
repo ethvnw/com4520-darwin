@@ -1,14 +1,8 @@
 import copy
-import os
-import pickle
 import random
 
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.machine import Machine
-
-"""
-A class to apply different types of mutations to a given FSM.
-"""
 
 
 class Mutator:
@@ -203,7 +197,9 @@ class Mutator:
         transition = random.choice(self.fsm.transitions)
         transition_trigger = transition["trigger"].split(" / ")
 
-        new_output = random.choice([out for out in self.fsm.outputs if out != transition_trigger[1]])
+        new_output = random.choice(
+            [out for out in self.fsm.outputs if out != transition_trigger[1]]
+        )
 
         transition["trigger"] = f"{transition_trigger[0]} / {new_output}"
 

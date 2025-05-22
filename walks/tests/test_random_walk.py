@@ -1,4 +1,4 @@
-from collections import Counter
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,7 +41,6 @@ def mutated_fsm2():
     mock_machine.state = "S0"
 
     # Mock triggers and transitions
-    # fsm._get_triggers.return_value = ['a', 'b', 'c']
     fsm.machine = mock_machine
     fsm.events = ["a", "b", "c"]
     fsm.transitions = [
@@ -127,27 +126,30 @@ def sample_hsi_suite():
 
 
 @pytest.fixture
-def random_walk(simple_fsm, mutated_fsm1, sample_hsi_suite):
+def random_walk(
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
+):
     return RandomWalk(simple_fsm, mutated_fsm1, 70, sample_hsi_suite)
 
 
-################  TESTS #######################################################
-
-
-def test_random_walk(random_walk):
+def test_random_walk(random_walk: RandomWalk):
     """Tests that the walk actually walks for a random walk"""
     walk = random_walk.walk(RandomWalk.WalkType.RANDOM)
     assert len(walk) > 0
 
 
-def test_random_walk_no_coverage(simple_fsm, mutated_fsm1, sample_hsi_suite):
+def test_random_walk_no_coverage(
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
+):
     """Tests that the random walk doesnt walk if target coverage is 0"""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 0, sample_hsi_suite)
     walk = random_walk.walk(RandomWalk.WalkType.RANDOM)
     assert len(walk) == 0
 
 
-def test_random_walk_loop(loop_fsm, sample_hsi_suite, loop_fsm_mutated):
+def test_random_walk_loop(
+    loop_fsm: MagicMock, sample_hsi_suite: dict[str, Any], loop_fsm_mutated: MagicMock
+):
     """Test that it doesnt get stuck in a loop"""
     random_walk = RandomWalk(loop_fsm, loop_fsm_mutated, 60, sample_hsi_suite)
     walk = random_walk.walk(RandomWalk.WalkType.RANDOM)
@@ -155,7 +157,7 @@ def test_random_walk_loop(loop_fsm, sample_hsi_suite, loop_fsm_mutated):
     assert len(walk) < 100  # Should not be too long/ no infinite loop
 
 
-def test_random_walk_max_length_exceeded(random_walk):
+def test_random_walk_max_length_exceeded(random_walk: RandomWalk):
     """Test that the random walk stops if the maximum walk length is exceeded."""
     # override the max length to test
     random_walk.max_walk_length = 1
@@ -164,7 +166,7 @@ def test_random_walk_max_length_exceeded(random_walk):
     assert walk == -1
 
 
-def test_detected_fault(simple_fsm, mutated_fsm1):
+def test_detected_fault(simple_fsm: MagicMock, mutated_fsm1: MagicMock):
     """Test that the detected_fault method identifies faults correctly."""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 100, {})
     mutated_walk = ["a / 0", "b / 1", "c / 0"]
@@ -174,7 +176,7 @@ def test_detected_fault(simple_fsm, mutated_fsm1):
     assert fault_index == 3
 
 
-def test_detected_fault_no_fault(simple_fsm, mutated_fsm1):
+def test_detected_fault_no_fault(simple_fsm: MagicMock, mutated_fsm1: MagicMock):
     """Test that the detected_fault method returns -1 if no fault is found."""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 100, {})
     mutated_walk = ["a / 0", "b / 1", "c / 0"]
@@ -184,7 +186,7 @@ def test_detected_fault_no_fault(simple_fsm, mutated_fsm1):
 
 
 def test_random_walk_reaches_target_coverage(
-    simple_fsm, mutated_fsm1, sample_hsi_suite
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
 ):
     """Test that the random walk reaches the target coverage."""
     target_coverage = 100
@@ -197,7 +199,7 @@ def test_random_walk_reaches_target_coverage(
 
 
 def test_random_reset_walk_doesnt_walk_with_no_coverage(
-    simple_fsm, mutated_fsm1, sample_hsi_suite
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
 ):
     """Tests that the walk doesnt walk if target coverage is 0"""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 0, sample_hsi_suite)
@@ -205,7 +207,8 @@ def test_random_reset_walk_doesnt_walk_with_no_coverage(
     assert len(walk) == 0
 
 
-def test_random_walk_with_empty_triggers(mutated_fsm1):
+def test_random_walk_with_empty_triggers(mutated_fsm1: MagicMock):
+    """Test that the random walk raises an error if there are no triggers."""
     mock_fsm = MagicMock(spec=FSMGenerator)
     mock_fsm.machine = MagicMock()
     mock_fsm.initial = "S0"
@@ -219,7 +222,9 @@ def test_random_walk_with_empty_triggers(mutated_fsm1):
         walk.walk(RandomWalk.WalkType.RANDOM)
 
 
-def test_impossible_coverage(simple_fsm, mutated_fsm1, sample_hsi_suite):
+def test_impossible_coverage(
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
+):
     """Test a random walk with a target coverage that is impossible"""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 200, sample_hsi_suite)
     walk = random_walk.walk(RandomWalk.WalkType.RANDOM)
@@ -227,21 +232,23 @@ def test_impossible_coverage(simple_fsm, mutated_fsm1, sample_hsi_suite):
     assert random_walk.target_coverage == 100
 
 
-def test_statistical_walk(random_walk):
+def test_statistical_walk(random_walk: RandomWalk):
     """Tests that the walk actually walks for a statistical walk"""
     walk = random_walk.walk(RandomWalk.WalkType.STATISTICAL)
     assert isinstance(walk, list)
     assert len(walk) > 0
 
 
-def test_statistical_walk_no_coverage(simple_fsm, mutated_fsm1, sample_hsi_suite):
+def test_statistical_walk_no_coverage(
+    simple_fsm: MagicMock, mutated_fsm1: MagicMock, sample_hsi_suite: dict[str, Any]
+):
     """Tests that the statistical walk doesnt walk if target coverage is 0"""
     random_walk = RandomWalk(simple_fsm, mutated_fsm1, 0, sample_hsi_suite)
     walk = random_walk.walk(RandomWalk.WalkType.STATISTICAL)
     assert len(walk) == 0
 
 
-def test_statistical_walk_max_length_exceeded(random_walk):
+def test_statistical_walk_max_length_exceeded(random_walk: RandomWalk):
     """Test that the statistical walk stops if the maximum walk length is exceeded."""
     random_walk.max_walk_length = 1  # low max length to test
     walk = random_walk.walk(RandomWalk.WalkType.STATISTICAL)
@@ -249,80 +256,23 @@ def test_statistical_walk_max_length_exceeded(random_walk):
     assert walk == -1
 
 
-def test_limited_self_loop_walk(random_walk):
+def test_limited_self_loop_walk(random_walk: RandomWalk):
     """Tests that the walk actually walks for a limited self loop walk"""
     walk = random_walk.walk(RandomWalk.WalkType.LIMITED_SELF_LOOP)
     assert len(walk) > 0
     assert isinstance(walk, list)
 
 
-def test_limited_self_loop_walk_no_coverage(random_walk):
+def test_limited_self_loop_walk_no_coverage(random_walk: RandomWalk):
     """Tests that it doesn't walk if the target coverage is 0"""
     random_walk.target_coverage = 0
     walk = random_walk.walk(RandomWalk.WalkType.LIMITED_SELF_LOOP)
     assert len(walk) == 0
 
 
-def test_limited_self_loop_walk_max_length_exceeded(random_walk):
+def test_limited_self_loop_walk_max_length_exceeded(random_walk: RandomWalk):
     """Test that the limited self loop walk stops if the maximum walk length is exceeded."""
     random_walk.max_walk_length = 1  # low max length to test
     walk = random_walk.walk(RandomWalk.WalkType.LIMITED_SELF_LOOP)
     # return -1 if max length exceeded
     assert walk == -1
-
-
-# maybe do a test with a fsm with a self loop
-# and compare the walk length of a random walk and self loop walk
-
-#
-
-
-# def test_random_walk_with_reset(simple_fsm, mutated_fsm1, sample_hsi_suite):
-#     """Test that the random walk with reset works as expected."""
-#     target_coverage = 70
-#     step_limit = 5
-#     random_walk = RandomWalk(simple_fsm, mutated_fsm1, target_coverage, sample_hsi_suite)
-#     walk = random_walk.walk(RandomWalk.WalkType.RANDOM_WITH_RESET, step_limit)
-#     assert len(walk) > 0
-#     assert random_walk.target_coverage == target_coverage
-
-###### code broke or test broke idk, probs the test #######
-# def test_random_walk_reset(random_walk, simple_fsm):
-#     """ Test that the walk resets after a certain number of steps """
-#     simple_fsm.machine.state = 'S0'
-#     #simple_fsm._get_triggers.side_effect = [['S0->a / x'], ['S1->b / y'], ['S2->c / z']]
-#     walk = random_walk.walk(RandomWalk.WalkType.RANDOM_WITH_RESET, 1)
-#     # ensure that the fsm does at least one step and then resets
-#     assert len(walk) >= 1
-#     assert simple_fsm.machine.state == simple_fsm.machine.initial
-#     # make sure walk continues after until coverage reached
-#     assert len(walk) >= (len(simple_fsm.transitions))
-
-
-# @pytest.fixture
-# def sample_fsm():
-#     fsm = FSMGenerator(num_states=5, num_inputs=3)
-#     fsm.draw("original.png")
-#     return fsm
-
-# @pytest.fixture
-# def mutator(sample_fsm):
-#     return Mutator(sample_fsm)
-
-# @pytest.fixture
-# def mutated_fsm(mutator):
-#     mutator._mutate()
-#     return mutator.fsm
-
-# def test_random_walk_reaches_target_coverage(simple_fsm, sample_hsi_suite, mutated_fsm1):
-#     """ Test that the walk reaches the target coverage """
-#     target_coverage = 100
-#     random_walk = RandomWalk(simple_fsm, mutated_fsm1, target_coverage, sample_hsi_suite)
-#     #walk = RandomWalk(simple_fsm, target_coverage=target_coverage, HSI_suite=sample_hsi_suite)
-#     walk = random_walk.walk(RandomWalk.WalkType.RANDOM)
-#     # Assert the coverage has reached the target
-#     assert len(walk) > 0, "Walk should take at least one step"
-#     # Extract the actual state transitions called
-#     triggered_states = [call.args[0] for call in simple_fsm._get_triggers]#.mock_calls]
-#     # Ensure the FSM achieves full coverage
-#     assert len(set(triggered_states)) == len(simple_fsm.transitions) -1

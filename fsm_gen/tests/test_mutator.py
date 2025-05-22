@@ -21,7 +21,7 @@ def fsm():
     return LocalisationSystem()
 
 
-def test_add_state(mutator):
+def test_add_state(mutator: Mutator):
     """
     Test that the add_state function increases the number of states in the FSM.
     """
@@ -30,7 +30,7 @@ def test_add_state(mutator):
     assert len(mutator.fsm.states) == initial_state_count + 1
 
 
-def test_remove_state(mutator):
+def test_remove_state(mutator: Mutator):
     """
     Test that the remove_state function decreases the number of states in the FSM.
     """
@@ -39,7 +39,7 @@ def test_remove_state(mutator):
     assert len(mutator.fsm.states) == initial_state_count - 1
 
 
-def test_change_trigger_output(mutator):
+def test_change_trigger_output(mutator: Mutator):
     """
     Test that the change_trigger_output function changes the output of a trigger.
     """
@@ -66,7 +66,7 @@ def test_change_trigger_output(mutator):
     )
 
 
-def test_change_trans_dest(mutator):
+def test_change_trans_dest(mutator: Mutator):
     """
     Test that the change_trans_dest function changes the destination of a transition.
     """
@@ -94,7 +94,7 @@ def test_change_trans_dest(mutator):
     )
 
 
-def test_get_num_transitions_exclude_loops(mutator):
+def test_get_num_transitions_exclude_loops(mutator: Mutator):
     """
     Test that the get_num_transitions function excludes loops from the count.
     """
@@ -103,7 +103,7 @@ def test_get_num_transitions_exclude_loops(mutator):
     assert mutator._get_num_transitions_exclude_loops("S0", incoming=False) == 2
 
 
-def test_check_determinsism(mutator):
+def test_check_determinsism(mutator: Mutator):
     """
     Test that the check_determinsism function correctly identifies a non-deterministic FSM.
     """
@@ -113,7 +113,7 @@ def test_check_determinsism(mutator):
     assert mutator._check_determinism() is False
 
 
-def test_check_connectivity(mutator, fsm):
+def test_check_connectivity(mutator: Mutator, fsm: LocalisationSystem):
     """
     Test that the check_connectivity function correctly identifies a connected FSM.
     """
@@ -128,7 +128,7 @@ def test_check_connectivity(mutator, fsm):
     assert mutator._check_connectivity() is False
 
 
-def test_create_mutated_fsm(mutator, fsm):
+def test_create_mutated_fsm(mutator: Mutator, fsm: LocalisationSystem):
     """
     Test that the create_mutated_fsm function creates a mutated FSM that is different from the original.
     """

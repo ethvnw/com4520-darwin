@@ -70,6 +70,15 @@ class RandomWalk:
         return result
 
     def _calculate_event_probabilities(self) -> dict[str, dict[str, float]]:
+        """
+        Assign a probability to each event at each state based on the number of
+        occurrences of the event in the HSI set for that state. The more often an event
+        occurs in the HSI set, the more likely it is to be chosen during a walk.
+
+        Returns:
+            dict[str, dict[str, float]]: a dictionary of dictionaries containing the
+            probabilities of each event at each state.
+        """
         state_event_probabilities = defaultdict(dict)
         state_identifiers = generate_harmonised_state_identifiers(self.original_fsm)
 

@@ -2,12 +2,13 @@ import pytest
 
 from fsm_gen.generator import FSMGenerator
 from fsm_gen.machine import Machine
-from walks.hsi import (  # _compute_w_set,; _compute_h_sets,
-    _find_shortest_path, _generate_state_cover, _generate_transition_cover,
-    generate_harmonised_state_identifiers, generate_HSI_suite)
-
-# from walks.hsi import hsi
-
+from walks.hsi import (
+    _find_shortest_path,
+    _generate_state_cover,
+    _generate_transition_cover,
+    generate_harmonised_state_identifiers,
+    generate_HSI_suite,
+)
 
 
 @pytest.fixture
@@ -36,19 +37,17 @@ def fsm():
     return fsm
 
 
-def test_find_shortest_path(fsm):
+def test_find_shortest_path(fsm: FSMGenerator):
     """Ensure a valid list is returned and the path is correct"""
-    # making sure the shortest path is returned
     assert _find_shortest_path(fsm, "S2") == ["a", "b"]
     assert _find_shortest_path(fsm, "S1") == ["a"]
     assert _find_shortest_path(fsm, "S0") == []
     path = _find_shortest_path(fsm, "S2")
-    # checking structure of path
     assert isinstance(path, list)
     assert all(isinstance(event, str) for event in path)
 
 
-def test_generate_state_cover(fsm):
+def test_generate_state_cover(fsm: FSMGenerator):
     """Ensure a valid structure and state cover is returned"""
     state_cover = _generate_state_cover(fsm)
     assert isinstance(state_cover, dict)  # the state cover should be a dict
@@ -62,7 +61,7 @@ def test_generate_state_cover(fsm):
     assert state_cover == {"S0": [], "S1": ["a"], "S2": ["a", "b"]}
 
 
-def test_generate_transition_cover(fsm):
+def test_generate_transition_cover(fsm: FSMGenerator):
     """Ensure a valid non-empty set is returned"""
     transition_cover = _generate_transition_cover(fsm)
     # make sure structure is correct
@@ -75,7 +74,7 @@ def test_generate_transition_cover(fsm):
     assert transition_cover == {"a", "ab", "aba"}
 
 
-def test_compute_h_sets(fsm):
+def test_compute_h_sets(fsm: FSMGenerator):
     """Checks if the H sets are correctly returned"""
     h_sets = generate_harmonised_state_identifiers(fsm)
     # make sure the structure is correct
@@ -108,7 +107,8 @@ def test_compute_h_sets_edge_cases():
         assert isinstance(h, set)
 
 
-def test_generate_HSI_suite(fsm):
+def test_generate_HSI_suite(fsm: FSMGenerator):
+    """Ensure a valid structure and HSI suite is returned"""
     identifiers = generate_harmonised_state_identifiers(fsm)
     hsi_suite = generate_HSI_suite(fsm, identifiers)
     assert isinstance(hsi_suite, dict)
